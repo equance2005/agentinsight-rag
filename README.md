@@ -30,6 +30,42 @@ RAG 管理台：`http://127.0.0.1:8787/demo/`
 
 先创建或导入知识库，并记录 `kb show <知识库>` 输出的知识库 ID 和 `public key`。
 
+### 获取知识库 ID 和 public key
+
+在 `rag` 目录执行：
+
+```bash
+cd rag
+npm run cli -- ls
+```
+
+先查看已有知识库。如果还没有知识库，创建一个：
+
+```bash
+npm run cli -- create agentinsight-docs
+```
+
+然后查看详情：
+
+```bash
+npm run cli -- show agentinsight-docs
+```
+
+也可以把知识库 ID 传给 `show`：
+
+```bash
+npm run cli -- show kb_xxxxxxxxxxxxxxxx
+```
+
+从输出中复制两项：
+
+- `id` 或 `kbId`：形如 `kb_xxxxxxxxxxxxxxxx`，填入 `AGENT_INSIGHT_RAG_KB_ID`。
+- `public key`：形如 `pk_xxxxxxxxxxxxxxxx`，填入 `AGENT_INSIGHT_RAG_API_KEY`。
+
+知识库 ID 和 public key 必须来自同一条 `kb show` 输出，不能把模型 API Key（例如 `sk-...`）当作 RAG public key。
+
+知识库也可以通过管理台查看：打开 `http://127.0.0.1:8787/demo/`，在知识库管理区域选择目标知识库，复制其 ID 和 public key。若管理台只显示脱敏值，优先使用 CLI 的 `kb show` 输出。
+
 ## 启动 Agent Insight
 
 在 Ubuntu/WSL 中：
