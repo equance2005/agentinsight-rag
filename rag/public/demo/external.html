@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>外部测试站点 — 知识库助手插件集成验证</title>
+  <style>
+    /* 这个页面刻意使用与 Agent Insight 无关的样式，用于验证插件的样式隔离。
+       其中包含一些「攻击性」全局样式，用来确认 Shadow DOM 确实挡住了污染。 */
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Songti SC", serif;
+      background: #fbf9f4;
+      color: #2b2b2b;
+      line-height: 1.7;
+    }
+    /* 故意设置激进的全局样式：如果插件没有做样式隔离，这些规则会破坏插件外观 */
+    button { border-radius: 0 !important; font-family: monospace !important; }
+    div { letter-spacing: 0.02em; }
+    h1, h2 { font-family: Georgia, serif; }
+    header {
+      padding: 48px 24px 32px;
+      border-bottom: 3px double #d8d2c4;
+      background: #fff;
+    }
+    main { max-width: 780px; margin: 0 auto; padding: 32px 24px 80px; }
+    h1 { font-size: 30px; margin: 0 0 8px; }
+    .lead { color: #6b6b6b; margin: 0; }
+    section { margin-top: 32px; }
+    h2 { font-size: 20px; border-left: 4px solid #b9a06a; padding-left: 10px; }
+    code {
+      background: #f0ece2; padding: 2px 6px; border-radius: 3px;
+      font-family: ui-monospace, Menlo, monospace; font-size: 13px;
+    }
+    pre {
+      background: #2b2b2b; color: #f0ece2; padding: 16px;
+      border-radius: 6px; overflow-x: auto; font-size: 13px; line-height: 1.5;
+    }
+    .badge {
+      display: inline-block; background: #e8f4e8; color: #2f6b2f;
+      border: 1px solid #b6dcb6; border-radius: 999px;
+      padding: 3px 10px; font-size: 12px; font-family: system-ui;
+    }
+    .card {
+      background: #fff; border: 1px solid #e4dfd2; border-radius: 8px;
+      padding: 16px 18px; margin-top: 12px;
+    }
+    .muted { color: #7a7a7a; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div style="max-width:780px;margin:0 auto">
+      <span class="badge">外部测试站点 · 与 Agent Insight 无关</span>
+      <h1>产品文档站（模拟宿主）</h1>
+      <p class="lead">
+        本页用于验证通用知识库插件能否在<strong>任意网站</strong>中独立工作。
+        整页只有一处集成代码，且只依赖知识库自身的公开接口。
+      </p>
+    </div>
+  </header>
+
+  <main>
+    <div id="configBanner" class="card" style="display:none;border-color:#f0d69a;background:#fff8e6;margin-top:0"></div>
+
+    <section>
+      <h2>这个页面验证什么</h2>
+      <div class="card">
+        <ul>
+          <li><strong>不依赖宿主专有接口</strong>：页面没有任何 Trace / Run / Execution 概念，也没有 Agent Insight 的登录态。</li>
+          <li><strong>样式隔离</strong>：本页对 <code>button</code> 和 <code>div</code> 设了激进的全局样式，插件仍应保持自身外观。</li>
+          <li><strong>开箱可用</strong>：宿主只需一段 <code>&lt;script&gt;</code> 标签。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>集成代码（完整内容）</h2>
+      <pre id="snippet">加载中…</pre>
+      <p class="muted">
+        本页<strong>自身已经是一段集成示例</strong>：通过 URL 参数
+        <code>?kb=&lt;知识库id&gt;&amp;key=&lt;公开key&gt;</code> 把配置传给页面，
+        页面再注入插件。<strong>不需要再手工往控制台注入 script</strong> ——
+        那样会产生第二个插件实例，两个悬浮球互相干扰。
+      </p>
+      <p class="muted">
+        要在自己的网站里集成，把上面的 <code>src</code> 换成你的知识库服务地址、
+        <code>data-kb-id</code> 与 <code>data-api-key</code> 换成
+        <code>kb show &lt;知识库&gt;</code> 的输出即可。
+      </p>
+    </section>
+
+    <section>
+      <h2>建议的验证问题</h2>
+      <div class="card">
+        <ul>
+          <li>「服务默认端口是多少？」 — 应给出带引用的准确回答</li>
+          <li>「数据库端口和日志保留期分别是多少？」 — 答案跨多个文档，每条陈述各自挂引用</li>
+          <li>「如何申请火星移民签证？」 — 知识库未覆盖，应明确拒答并提示补充方向</li>
+          <li>追问「那它和前面提到的端口有关系吗？」 — 验证多轮上下文</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>网络请求检查</h2>
+      <p class="muted">
+        打开浏览器开发者工具的网络面板，筛选 <code>/api/public/kb/</code>。
+        应只能看到以下路径，不应出现任何 Agent Insight 专有接口：
+      </p>
+      <div class="card">
+        <ul>
+          <li><code>POST /api/public/kb/{kbId}/chat</code> 或 <code>GET .../chat/stream</code></li>
+          <li><code>GET /api/public/kb/{kbId}/config</code></li>
+          <li><code>GET /api/public/kb/{kbId}/chunks/{chunkId}</code>（点击引用时）</li>
+          <li><code>POST /api/public/kb/feedback</code>（提交反馈时）</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===================== 唯一的集成代码 ===================== -->
+  <script>
+    // 通过 URL 参数注入配置，方便同一页面复用于不同知识库。
+    // 不带参数访问时**不会**注入插件，而是显示用法提示 ——
+    // 早期实现会回退成字面量 '__KB_ID__' 继续发请求，结果是一个必然 401 的
+    // 幽灵实例混在页面上，很难判断问题出在哪。
+    const params = new URLSearchParams(location.search);
+    const kbId = params.get('kb');
+    const apiKey = params.get('key');
+    const apiBase = params.get('api') || location.origin;
+
+    const snippetEl = document.getElementById('snippet');
+    const banner = document.getElementById('configBanner');
+
+    if (!kbId || !apiKey) {
+      snippetEl.textContent =
+        '<script src="' + apiBase + '/api/public/kb/widget.js"\n' +
+        '        data-kb-id="kb_xxxxxxxx"\n' +
+        '        data-api-key="pk_xxxxxxxx"\n' +
+        '        data-title="产品文档助手"><\/script>';
+
+      banner.style.display = 'block';
+      banner.innerHTML =
+        '<strong>尚未配置知识库，插件未加载。</strong><br>' +
+        '请用下面的地址访问（把 kb / key 换成 <code>kb show &lt;知识库&gt;</code> 的输出）：<br>' +
+        '<code style="word-break:break-all">' +
+        location.origin + location.pathname + '?kb=&lt;知识库id&gt;&amp;key=&lt;公开key&gt;' +
+        '</code><br>' +
+        '<span style="opacity:.8">也可以带参数打开本页（见下方「建议的验证问题」）。</span>';
+    } else {
+      snippetEl.textContent =
+        '<script src="' + apiBase + '/api/public/kb/widget.js"\n' +
+        '        data-kb-id="' + kbId + '"\n' +
+        '        data-api-key="' + apiKey + '"\n' +
+        '        data-title="产品文档助手"\n' +
+        '        data-theme="light"><\/script>';
+
+      const script = document.createElement('script');
+      script.src = apiBase + '/api/public/kb/widget.js';
+      script.dataset.kbId = kbId;
+      script.dataset.apiKey = apiKey;
+      script.dataset.apiBase = apiBase;
+      script.dataset.title = '产品文档助手';
+      script.dataset.theme = 'light';
+      script.dataset.accent = '#b9a06a';
+      document.body.appendChild(script);
+    }
+  </script>
+</body>
+</html>

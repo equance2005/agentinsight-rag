@@ -1,0 +1,260 @@
+const { execSync, spawn } = require('child_process')
+const fs = require('fs')
+const path = require('path')
+const http = require('http')
+const os = require('os')
+const { getAgentInsightHome } = require('./agent-insight-home.cjs')
+
+function getPreferredHomeDataRoot() {
+  return path.join(os.homedir(), '.agent-insight')
+}
+
+function getLegacyHomeDataRoot() {
+  return path.join(os.homedir(), '.skill-insight')
+}
+
+function getExistingHomeDataRoot() {
+  const preferred = getPreferredHomeDataRoot()
+  const legacy = getLegacyHomeDataRoot()
+  if (fs.existsSync(preferred)) return preferred
+  if (fs.existsSync(legacy)) return legacy
+  return preferred
+}
+
+function getDataRoot() {
+  return getAgentInsightHome()
+}
+
+function migrateDataIfNeeded() {
+  const newDataRoot = getPreferredHomeDataRoot()
+  const newDbPath = path.join(newDataRoot, 'data', 'witty_insight.db')
+  const legacyDbPath = path.join(getLegacyHomeDataRoot(), 'data', 'witty_insight.db')
+  const oldDbPath = path.resolve(__dirname, '../data/witty_insight.db')
+
+  const newExists = fs.existsSync(newDbPath)
+  const legacyExists = fs.existsSync(legacyDbPath)
+  const oldExists = fs.existsSync(oldDbPath)
+
+  if (newExists && (oldExists || legacyExists)) {
+    console.log('Database already exists at new location, skipping migration')
+    return
+  }
+
+  if (newExists && !oldExists && !legacyExists) {
+    console.log('Using existing database at ' + newDbPath)
+    return
+  }
+
+  if (!newExists && (oldExists || legacyExists)) {
+    console.log('Migrating database to agent-insight directory...')
+    const newDataPath = path.join(newDataRoot, 'data')
+    if (!fs.existsSync(newDataPath)) {
+      fs.mkdirSync(newDataPath, { recursive: true })
+    }
+    fs.copyFileSync(legacyExists ? legacyDbPath : oldDbPath, newDbPath)
+    console.log('✓ Database migrated to ' + newDbPath)
+
+    return
+  }
+
+  console.log('Creating new database at ' + newDbPath)
+}
+
+function findPidOnPort(port) {
+  const platform = process.platform
+
+  try {
+    if (platform === 'win32') {
+      const output = execSync(`netstat -ano | findstr :${port}`, { encoding: 'utf8' })
+      const lines = output.trim().split('\n')
+      for (const line of lines) {
+        const parts = line.trim().split(/\s+/)
+        if (parts.length >= 5) {
+          const localAddress = parts[1]
+          const state = parts[3]
+          const pid = parts[4]
+          const portMatch = localAddress.match(/:(\d+)$/)
+          if (portMatch && parseInt(portMatch[1]) === port && state === 'LISTENING') {
+            console.log(`[Windows] Found process ${pid} listening on port ${port}`)
+            return pid
+          }
+        }
+      }
+      console.log(`[Windows] No process found listening on port ${port}`)
+    } else {
+      if (fs.existsSync('/usr/bin/lsof') || fs.existsSync('/usr/sbin/lsof')) {
+        try {
+          const pid = execSync(`lsof -t -i:${port} -sTCP:LISTEN`, { encoding: 'utf8' })
+          if (pid.trim()) return pid.trim()
+        } catch (e) {}
+      }
+
+      if (fs.existsSync('/bin/ss') || fs.existsSync('/usr/bin/ss')) {
+        try {
+          const output = execSync(`ss -lptn "sport = :${port}"`, { encoding: 'utf8' })
+          const match = output.match(/pid=(\d+)/)
+          if (match) return match[1]
+        } catch (e) {}
+      }
+
+      if (fs.existsSync('/bin/netstat') || fs.existsSync('/usr/bin/netstat')) {
+        try {
+          const output = execSync(`netstat -nlp 2>/dev/null | grep ":${port} "`, { encoding: 'utf8' })
+          const match = output.match(/(\d+)\//)
+          if (match) return match[1]
+        } catch (e) {}
+      }
+
+      try {
+        const output = execSync(`fuser ${port}/tcp 2>/dev/null`, { encoding: 'utf8' })
+        if (output.trim()) return output.trim()
+      } catch (e) {}
+    }
+  } catch (e) {}
+
+  return null
+}
+
+function isPortListening(port) {
+  return new Promise((resolve) => {
+    const req = http.request({
+      hostname: 'localhost',
+      port: port,
+      path: '/',
+      method: 'HEAD',
+      timeout: 1000
+    }, (res) => {
+      resolve(true)
+    })
+
+    req.on('error', () => {
+      resolve(false)
+    })
+
+    req.on('timeout', () => {
+      req.destroy()
+      resolve(false)
+    })
+
+    req.end()
+  })
+}
+
+function killProcess(pid) {
+  const platform = process.platform
+
+  try {
+    if (platform === 'win32') {
+      console.log(`[Windows] Attempting to kill process with PID ${pid} using taskkill...`)
+      execSync(`taskkill /F /PID ${pid}`, { stdio: 'ignore' })
+      console.log(`[Windows] Successfully killed process ${pid}`)
+      return true
+    } else {
+      console.log(`[Unix] Attempting to kill process with PID ${pid} using kill -9...`)
+      execSync(`kill -9 ${pid}`, { stdio: 'ignore' })
+      console.log(`[Unix] Successfully killed process ${pid}`)
+      return true
+    }
+  } catch (e) {
+    console.error(`Failed to kill process ${pid}: ${e.message}`)
+    return false
+  }
+}
+
+function getPort(options) {
+  const envPath = path.join(getDataRoot(), '.env')
+  const fileEnv = fs.existsSync(envPath) ? require('dotenv').parse(fs.readFileSync(envPath)) : {}
+  if (process.env.PORT || fileEnv.PORT) {
+    throw new Error('PORT 已移除，请改用 AGENT_INSIGHT_PORT 并移除旧 PORT 配置')
+  }
+  const configured = process.env.AGENT_INSIGHT_PORT !== undefined
+    ? process.env.AGENT_INSIGHT_PORT : fileEnv.AGENT_INSIGHT_PORT
+  const value = String(options?.port ?? (configured || 3000))
+  if (!/^\d{1,5}$/.test(value) || Number(value) < 1 || Number(value) > 65535) {
+    throw new Error('AGENT_INSIGHT_PORT / --port 必须是 1 到 65535 的整数')
+  }
+  return Number(value)
+}
+
+function ensureEnvFile(packageRoot) {
+  const root = getDataRoot()
+  const envPath = path.join(root, '.env')
+  const envExamplePath = path.join(path.resolve(__dirname, '..'), '.env.example')
+
+  if (!fs.existsSync(envPath) && fs.existsSync(envExamplePath)) {
+    console.log('No ~/.agent-insight/.env found. Initializing from .env.example...')
+    fs.mkdirSync(path.dirname(envPath), { recursive: true })
+    // 生成时在文件头注明：这是当前生效的配置，由模板自动生成，改这里而不是改 .env.example
+    const header = [
+      `# >>> 本文件由 scripts/utils.js 于 ${new Date().toLocaleString('sv-SE')} 从 .env.example 自动生成 <<<`,
+      '# 这是 agent-insight 当前生效的环境配置；要改配置请直接编辑本文件。',
+      '# 项目根目录的 .env.example 只是模板，改它不会影响已生成的本文件。',
+      '# 注意：启动会同步 AGENT_INSIGHT_HOST；AGENT_INSIGHT_API_KEY 仅在缺失时初始化，安装指导注册的用户 Key 会保留。',
+      '#',
+      '',
+    ].join('\n')
+    fs.writeFileSync(envPath, header + fs.readFileSync(envExamplePath, 'utf8'), { mode: 0o600 })
+    console.log('✓ .env file created at ' + envPath)
+  }
+}
+
+function ensureDataDirectory(packageRoot) {
+  const root = getDataRoot()
+  const dataPath = path.join(root, 'data')
+  if (!fs.existsSync(dataPath)) {
+    console.log('Creating data directory...')
+    fs.mkdirSync(dataPath, { recursive: true })
+    console.log('✓ data directory created at ' + dataPath)
+  }
+}
+
+function runCommand(command, options = {}) {
+  return new Promise((resolve, reject) => {
+    console.log(`Running: ${command}`)
+    const [cmd, ...args] = command.split(' ')
+    const proc = spawn(cmd, args, {
+      stdio: 'inherit',
+      shell: true,
+      ...options
+    })
+
+    proc.on('close', (code) => {
+      if (code === 0) {
+        resolve()
+      } else {
+        reject(new Error(`Command failed with code ${code}`))
+      }
+    })
+  })
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+function findAvailablePort(startPort = 3000, maxAttempts = 100) {
+  for (let port = startPort; port < startPort + maxAttempts; port++) {
+    const pid = findPidOnPort(port)
+    if (!pid) {
+      return port
+    }
+  }
+  return startPort
+}
+
+module.exports = {
+  getPreferredHomeDataRoot,
+  getLegacyHomeDataRoot,
+  getExistingHomeDataRoot,
+  findPidOnPort,
+  killProcess,
+  getPort,
+  ensureEnvFile,
+  ensureDataDirectory,
+  runCommand,
+  sleep,
+  isPortListening,
+  findAvailablePort,
+  getDataRoot,
+  migrateDataIfNeeded
+}

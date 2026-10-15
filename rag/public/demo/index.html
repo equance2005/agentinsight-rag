@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>知识库助手 — 管理台与集成验证</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #1f2328;
+      --muted: #656d76;
+      --border: #d8dee4;
+      --accent: #4f46e5;
+      --panel: #f6f8fa;
+      --ok: #1a7f37;
+      --warn: #9a6700;
+      --err: #cf222e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                   "Microsoft YaHei", sans-serif;
+      font-size: 14px; line-height: 1.6;
+      color: var(--fg); background: var(--panel);
+    }
+    header {
+      background: #fff; border-bottom: 1px solid var(--border);
+      padding: 18px 24px;
+    }
+    header .inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    h1 { font-size: 19px; margin: 0; }
+    .tag {
+      font-size: 12px; padding: 2px 9px; border-radius: 999px;
+      background: #eef2ff; color: var(--accent); border: 1px solid #c7d2fe;
+    }
+    main { max-width: 1100px; margin: 0 auto; padding: 22px 24px 70px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+    .panel {
+      background: #fff; border: 1px solid var(--border);
+      border-radius: 10px; padding: 18px;
+    }
+    .panel h2 { font-size: 15px; margin: 0 0 4px; }
+    .panel .hint { color: var(--muted); font-size: 12.5px; margin: 0 0 14px; }
+    label { display: block; font-size: 13px; margin-bottom: 5px; color: var(--muted); }
+    input[type=text], input[type=password], textarea, select {
+      width: 100%; padding: 8px 10px;
+      border: 1px solid var(--border); border-radius: 7px;
+      font: inherit; color: inherit; background: #fff; outline: none;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 64px; }
+    .field { margin-bottom: 12px; }
+    .row { display: flex; gap: 10px; }
+    .row > * { flex: 1; }
+    button {
+      border: 1px solid var(--border); background: #fff; color: var(--fg);
+      border-radius: 7px; padding: 8px 14px; font: inherit; cursor: pointer;
+    }
+    button:hover { border-color: var(--accent); color: var(--accent); }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    button.primary:hover { opacity: .9; color: #fff; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+    pre.out {
+      background: #0d1117; color: #c9d1d9; padding: 12px;
+      border-radius: 8px; font-size: 12.5px; line-height: 1.5;
+      max-height: 300px; overflow: auto; white-space: pre-wrap; word-break: break-word;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+    }
+    .status { font-size: 13px; margin-top: 10px; min-height: 20px; }
+    .status.ok { color: var(--ok); }
+    .status.err { color: var(--err); }
+    .status.warn { color: var(--warn); }
+    .query-options { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+    .check-option { display:flex; align-items:center; gap:7px; margin:0; color:var(--fg); cursor:pointer; }
+    .check-option input { accent-color:var(--accent); }
+    .check-option small { color:var(--muted); font-weight:400; }
+    .timing-panel { margin-top:12px; padding:12px; background:var(--panel); border:1px solid var(--border); border-radius:8px; }
+    .timing-panel summary { cursor:pointer; color:var(--fg); font-size:13px; font-weight:600; }
+    .timing-summary { display:flex; gap:8px; flex-wrap:wrap; margin:9px 0 10px; }
+    .timing-chip { padding:3px 8px; border-radius:999px; background:#fff; border:1px solid var(--border); font-size:12px; }
+    .timing-bars { display:grid; gap:6px; }
+    .timing-row { display:grid; grid-template-columns:minmax(150px, 210px) 1fr 62px; align-items:center; gap:8px; font-size:12px; }
+    .timing-label { color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .timing-track { height:10px; background:#e5e7eb; border-radius:999px; overflow:hidden; }
+    .timing-fill { display:block; height:100%; min-width:3px; border-radius:999px; box-shadow:0 0 12px currentColor; }
+    .timing-value { text-align:right; font-family:ui-monospace, Menlo, Consolas, monospace; }
+    .timing-note { margin-top:8px; color:var(--muted); font-size:12px; }
+    .checklist { margin: 0; padding-left: 20px; }
+    .checklist li { margin-bottom: 7px; font-size: 13px; }
+    code {
+      background: var(--panel); padding: 1px 5px; border-radius: 4px;
+      font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 500; font-size: 12px; }
+    .full { grid-column: 1 / -1; }
+
+    /* Linear / Modern visual layer: deep space, ambient light and glass depth. */
+    :root {
+      --bg: #050506;
+      --fg: #EDEDEF;
+      --muted: #8A8F98;
+      --border: rgba(255,255,255,.08);
+      --accent: #5E6AD2;
+      --accent-bright: #6872D9;
+      --panel: #0a0a0c;
+      --ok: #63c78a;
+      --warn: #d7a84c;
+      --err: #ed7180;
+      --surface: rgba(255,255,255,.055);
+    }
+    html { background: #020203; }
+    body {
+      position: relative;
+      overflow-x: hidden;
+      color: var(--fg);
+      background:
+        radial-gradient(ellipse at 50% -18%, rgba(94,106,210,.20), transparent 42%),
+        radial-gradient(ellipse at 12% 30%, rgba(122,76,178,.10), transparent 30%),
+        linear-gradient(180deg, #0a0a0f 0%, #050506 48%, #020203 100%);
+      font-family: Inter, "Geist Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      pointer-events: none;
+      opacity: .22;
+      background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+      background-size: 64px 64px;
+      mask-image: linear-gradient(to bottom, black, transparent 82%);
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      opacity: .035;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+    }
+    .ambient-layer { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+    .ambient-blob { position: absolute; border-radius: 999px; filter: blur(120px); opacity: .22; animation: ambient-float 10s ease-in-out infinite; }
+    .ambient-primary { width: 720px; height: 520px; left: 50%; top: -280px; transform: translateX(-50%); background: rgba(94,106,210,.28); }
+    .ambient-secondary { width: 460px; height: 620px; left: -250px; top: 22%; background: rgba(132,77,184,.16); animation-delay: -3s; }
+    .ambient-tertiary { width: 420px; height: 620px; right: -240px; top: 38%; background: rgba(52,89,176,.14); animation-delay: -6s; }
+    .ambient-bottom { width: 680px; height: 220px; left: 35%; bottom: -190px; background: rgba(94,106,210,.15); animation-duration: 8s; }
+    @keyframes ambient-float { 0%,100% { margin-top: 0; } 50% { margin-top: -18px; } }
+    header {
+      position: relative;
+      background: rgba(5,5,6,.72);
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      backdrop-filter: blur(22px);
+      box-shadow: 0 1px 0 rgba(255,255,255,.03), 0 12px 36px rgba(0,0,0,.28);
+      opacity: var(--scroll-opacity, 1);
+      transform: translateY(var(--scroll-shift, 0));
+      transition: opacity .3s ease, transform .3s ease;
+    }
+    header .inner { max-width: 1180px; }
+    h1 { letter-spacing: -.035em; background: linear-gradient(180deg,#fff 0%,#EDEDEF 50%,rgba(237,237,239,.68) 100%); background-clip: text; -webkit-background-clip: text; color: transparent; }
+    .tag { background: rgba(94,106,210,.12); color: #b9bdf0; border-color: rgba(94,106,210,.35); }
+    main { position: relative; z-index: 1; max-width: 1180px; padding-top: 34px; }
+    .panel {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      background: linear-gradient(145deg, rgba(255,255,255,.085), rgba(255,255,255,.025) 48%, rgba(255,255,255,.018));
+      border: 1px solid rgba(255,255,255,.075);
+      border-radius: 16px;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.02), 0 2px 20px rgba(0,0,0,.40), 0 0 44px rgba(0,0,0,.22);
+      transition: transform .28s cubic-bezier(.16,1,.3,1), border-color .28s ease, box-shadow .28s ease;
+    }
+    .panel::before { content: ""; position: absolute; inset: 0; z-index: -2; background: radial-gradient(260px circle at var(--mx, 50%) var(--my, -20%), rgba(94,106,210,.16), transparent 70%); opacity: 0; transition: opacity .28s ease; }
+    .panel::after { content: ""; position: absolute; inset: 0 12% auto; height: 1px; z-index: -1; background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent); opacity: .7; }
+    .panel:hover { transform: translateY(-3px); border-color: rgba(255,255,255,.13); box-shadow: 0 0 0 1px rgba(255,255,255,.05), 0 8px 40px rgba(0,0,0,.5), 0 0 80px rgba(94,106,210,.10); }
+    .panel:hover::before { opacity: 1; }
+    .panel h2 { color: var(--fg); letter-spacing: -.02em; }
+    .panel .hint, label, .timing-label { color: var(--muted); }
+    input[type=text], input[type=password], textarea, select {
+      color: var(--fg); background: rgba(15,15,18,.88); border-color: rgba(255,255,255,.11); border-radius: 9px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+    }
+    input::placeholder, textarea::placeholder { color: rgba(255,255,255,.35); }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(94,106,210,.22), inset 0 1px 0 rgba(255,255,255,.08); }
+    button { color: var(--fg); background: rgba(255,255,255,.055); border-color: rgba(255,255,255,.09); border-radius: 9px; box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 2px 12px rgba(0,0,0,.18); transition: transform .22s cubic-bezier(.16,1,.3,1), background .22s ease, border-color .22s ease, box-shadow .22s ease; }
+    button:hover { color: #fff; background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.16); box-shadow: 0 5px 20px rgba(0,0,0,.28), 0 0 24px rgba(94,106,210,.08); transform: translateY(-2px); }
+    button:active { transform: scale(.98); }
+    button.primary { background: var(--accent); border-color: rgba(104,114,217,.72); box-shadow: 0 0 0 1px rgba(94,106,210,.45), 0 4px 12px rgba(94,106,210,.30), inset 0 1px 0 rgba(255,255,255,.2); }
+    button.primary:hover { background: var(--accent-bright); box-shadow: 0 0 0 1px rgba(120,130,230,.6), 0 7px 25px rgba(94,106,210,.38), inset 0 1px 0 rgba(255,255,255,.25); }
+    .status { color: var(--muted); }
+    .status.ok { color: var(--ok); } .status.warn { color: var(--warn); } .status.err { color: var(--err); }
+    code { color: #c0c5f4; background: rgba(94,106,210,.10); }
+    table { color: var(--fg); } th, td { border-color: rgba(255,255,255,.07); } th { color: var(--muted); }
+    pre.out { background: rgba(2,2,3,.72); border: 1px solid rgba(255,255,255,.06); box-shadow: inset 0 1px 0 rgba(255,255,255,.03); }
+    .timing-panel { background: rgba(5,5,6,.38); border-color: rgba(255,255,255,.08); }
+    .timing-chip { color: var(--fg); background: rgba(255,255,255,.045); border-color: rgba(255,255,255,.08); }
+    .timing-track { background: rgba(255,255,255,.09); }
+    @media (max-width: 700px) { .row { flex-direction: column; } .timing-row { grid-template-columns: 130px 1fr 56px; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+  </style>
+</head>
+<body>
+  <div class="ambient-layer" aria-hidden="true">
+    <span class="ambient-blob ambient-primary"></span>
+    <span class="ambient-blob ambient-secondary"></span>
+    <span class="ambient-blob ambient-tertiary"></span>
+    <span class="ambient-blob ambient-bottom"></span>
+  </div>
+  <header>
+    <div class="inner">
+      <h1>知识库助手</h1>
+      <span class="tag">通用知识库问答</span>
+      <span class="tag" style="background:#f6f8fa;color:#656d76;border-color:#d8dee4">宿主运行模式</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="grid">
+
+      <!-- ========== 1. 连接与配置 ========== -->
+      <section class="panel">
+        <h2>1. 连接知识库</h2>
+        <p class="hint">填写 <code>kb show &lt;名称&gt;</code> 输出的 id 与公开 key。</p>
+
+        <div class="field">
+          <label for="kbId">知识库 ID 或名称</label>
+          <input id="kbId" type="text" placeholder="kb_xxxxxxxx" />
+        </div>
+        <div class="field">
+          <label for="apiKey">公开 key（public key）</label>
+          <input id="apiKey" type="text" placeholder="pk_xxxxxxxx" />
+        </div>
+        <div class="actions">
+          <button class="primary" id="btnConnect">加载配置</button>
+          <button id="btnSave">保存到本机</button>
+          <button id="btnClear">清除</button>
+        </div>
+        <div class="status" id="configStatus"></div>
+      </section>
+
+      <!-- ========== 2. 网页上传 ========== -->
+      <section class="panel">
+        <h2>2. 网页上传文档</h2>
+        <p class="hint">
+          选择<strong>全部或部分</strong>文件即可；支持 md、txt、Word、Excel、PDF。
+          解析失败的文件会在此显式列出，不会被静默跳过。
+        </p>
+
+        <div class="field">
+          <label for="files">选择文件（可多选）</label>
+          <input id="files" type="file" multiple
+                 accept=".md,.markdown,.txt,.csv,.json,.log,.docx,.xlsx,.xls,.pdf" />
+        </div>
+        <p class="hint" id="uploadHint" style="margin:8px 0 10px"></p>
+        <div class="actions">
+          <button class="primary" id="btnUpload" disabled>上传并导入</button>
+        </div>
+        <div class="status" id="uploadStatus"></div>
+        <div id="uploadResult"></div>
+      </section>
+
+      <!-- ========== 3. 问答验证 ========== -->
+      <section class="panel full">
+        <h2>3. 问答验证</h2>
+        <p class="hint">
+          直接调用公开接口（与插件走同一条链路），便于核对回答、引用与闸门裁决。
+        </p>
+
+        <div class="field">
+          <label for="question">问题</label>
+          <textarea id="question" placeholder="服务默认端口是多少？"></textarea>
+        </div>
+        <div class="row" style="margin-bottom:10px">
+          <div>
+            <label for="conversationId">会话 ID（留空则新建，用于多轮）</label>
+            <input id="conversationId" type="text" placeholder="（自动填充）" />
+          </div>
+          <div style="flex:0 0 140px">
+            <label for="topK">召回条数</label>
+            <input id="topK" type="text" value="6" />
+          </div>
+        </div>
+        <div class="query-options">
+          <label class="check-option" for="fastMode">
+            <input id="fastMode" type="checkbox" />
+            快速模式
+            <small>跳过生成后校验，少一次模型调用</small>
+          </label>
+        </div>
+        <p class="hint" id="askHint" style="margin:8px 0 10px"></p>
+        <div class="actions">
+          <button class="primary" id="btnAsk" disabled>提问（流式）</button>
+          <button id="btnAskSync" disabled>提问（非流式）</button>
+          <button id="btnReset">新会话</button>
+        </div>
+        <div class="status" id="askStatus"></div>
+        <div id="askResult"></div>
+      </section>
+
+      <!-- ========== 4. 插件集成 ========== -->
+      <section class="panel full">
+        <h2>4. 插件集成</h2>
+        <p class="hint">
+          同一份 <code>kb-widget.js</code> 在两类宿主中复用：
+          本页（宿主运行模式）与
+          <a href="/demo/external.html" target="_blank">外部静态测试页</a>
+          （与 Agent Insight 无关的独立站点）。
+        </p>
+
+        <div class="field">
+          <label>集成代码</label>
+          <pre class="out" id="embedSnippet">请先在上方填写知识库 ID 与 key。</pre>
+        </div>
+
+        <div class="actions">
+          <button class="primary" id="btnMount">在本页挂载插件</button>
+          <button id="btnUnmount">卸载插件</button>
+          <a class="tag" href="/demo/external.html" target="_blank" style="text-decoration:none;padding:8px 14px;border-radius:7px;">
+            打开外部测试页 →
+          </a>
+        </div>
+        <div class="status" id="widgetStatus"></div>
+      </section>
+
+      <!-- ========== 5. 验收清单 ========== -->
+      <section class="panel full">
+        <h2>5. 第一步验收清单</h2>
+        <p class="hint">逐条对照，全部可在本页或外部测试页完成。</p>
+        <table>
+          <thead>
+            <tr><th style="width:70px">组</th><th>验收项</th><th style="width:260px">在本页如何验证</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>A</td>
+              <td>CLI 与网页分别导入；md/txt/Word/Excel/PDF 正确解析</td>
+              <td>用「网页上传」选多种格式；CLI 用 <code>kb import</code></td>
+            </tr>
+            <tr>
+              <td>B</td>
+              <td>内容增删改查、增量同步、问答对录入</td>
+              <td>CLI <code>kb sync</code> / <code>kb qa add</code>；改动源文件后再同步并观察「向量：计算 N，复用 M」</td>
+            </tr>
+            <tr>
+              <td>C</td>
+              <td>插件在外部站点与宿主页面都能完成普通文档问答</td>
+              <td>本页挂载 + 打开外部测试页；对照两者行为</td>
+            </tr>
+            <tr>
+              <td>D</td>
+              <td>多轮上下文、流式输出、悬浮入口与对话框交互</td>
+              <td>用「提问（流式）」观察增量输出；插件内连续追问</td>
+            </tr>
+            <tr>
+              <td>E</td>
+              <td>有答案 / 跨文档 / 未覆盖 / 证据冲突 四类问题的表现</td>
+              <td>依次提问，核对「裁决」「引用」「引用可点开定位」</td>
+            </tr>
+            <tr>
+              <td>F</td>
+              <td>不认可反馈与未解决问题被记录，可供维护者处理</td>
+              <td>插件内点 👎；CLI <code>kb gaps</code> / <code>kb resolve</code> 复查闭环</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="/demo/console.js"></script>
+</body>
+</html>

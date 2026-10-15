@@ -1,0 +1,32 @@
+{
+  "name": "skill-used-jump-link",
+  "title": "执行记录中skill used增加跳转功能",
+  "status": "completed",
+  "claimedBy": "gongxh13",
+  "claimedAt": "2026-03-18T08:50:00Z",
+  "completedAt": "2026-03-18T09:30:00Z",
+  "worktree": {
+    "path": "",
+    "enabled": false
+  },
+  "platformIssue": {
+    "id": 52,
+    "web_url": "https://atomgit.com/openeuler/witty-skill-insight/issues/52",
+    "title": "【feature】执行记录中skill used增加跳转功能",
+    "state": "open"
+  },
+  "documentation": {
+    "requirements": [],
+    "design": [],
+    "tests": [],
+    "pr": [
+      {
+        "title": "Pull Request #38",
+        "url": "https://atomgit.com/openeuler/witty-skill-insight/merge_requests/38",
+        "createdAt": "2026-03-18T09:30:00Z"
+      }
+    ],
+    "deployment": [],
+    "notes": ""
+  }
+}

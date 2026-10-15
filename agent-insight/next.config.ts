@@ -1,0 +1,121 @@
+import type { NextConfig } from "next";
+import { config } from "dotenv";
+import path from "path";
+import { assertSupportedHomeEnv, getAgentInsightHome } from './scripts/agent-insight-home.cjs';
+
+const agentInsightHome = getAgentInsightHome();
+
+const managedEnv = config({ path: path.join(agentInsightHome, ".env") });
+assertSupportedHomeEnv(managedEnv.parsed || {});
+const projectEnv = config();
+assertSupportedHomeEnv(projectEnv.parsed || {});
+assertSupportedHomeEnv();
+process.env.AGENT_INSIGHT_HOME = agentInsightHome;
+
+const nextConfig: NextConfig = {
+  basePath: process.env.NEXT_PUBLIC_URL_PREFIX || '',
+  output: 'standalone',
+  typescript: {
+    tsconfigPath: 'tsconfig.next.json',
+  },
+  serverExternalPackages: ["node-fetch", "pg"],
+  // Keep local/temp & non-runtime dirs out of the standalone bundle, otherwise
+  // next build sweeps them in (e.g. the gitignored ./exclude scratch dir can be
+  // 1GB+ of local logs, bloating the npm package non-deterministically per machine).
+  outputFileTracingExcludes: {
+    '*': [
+      '.git/**',
+      'tmp/**',
+      '*.tar',
+      '*.tar.*',
+      '*.tgz',
+      '*.zip',
+      'exclude/**',
+      'tests/**',
+      'test/**',
+      'skillbench/**',
+      'features/**',
+      'tools/**',
+      'docs/**',
+      'data/**',
+    ],
+  },
+  // Next 16.1.4's webpack tracer misses several relative Next runtime
+  // dependencies, leaving an otherwise successful standalone build unable to boot.
+  outputFileTracingIncludes: {
+    '*': [
+      'node_modules/next/dist/server/mcp/**/*',
+      'node_modules/next/dist/next-devtools/**/*',
+      'node_modules/next/dist/lib/metadata/**/*',
+      'node_modules/next/dist/pages/**/*',
+    ],
+  },
+  // git worktree 场景：cwd 在 <main>/.claude/worktrees/<id>，依赖装在主仓库 node_modules，
+  // worktree 本地 node_modules 不完整——root 必须指向主仓库根，turbopack 才解析得到 next。
+  // 非 worktree 场景：不显式设置 root。Windows 上把 root 设为绝对路径会触发 Turbopack
+  // 的 "Invalid distDirRoot" panic（distDir .next 被判为逃出 projectPath），默认值反而安全。
+  turbopack: (() => {
+    const cwd = path.resolve('.');
+    const m = cwd.match(/^(.*)[/\\]\.claude[/\\]worktrees[/\\][^/\\]+$/);
+    return m ? { root: m[1] } : {};
+  })(),
+  experimental: {
+      serverActions: {
+          allowedOrigins: ["*"] //
+      }
+  },
+  async rewrites() {
+    const urlPrefix = process.env.NEXT_PUBLIC_URL_PREFIX || '';
+
+    // OTel ingestion at root (so OTel collectors can post to /v1/traces directly)
+    const baseRewrites: { source: string; destination: string }[] = [
+      { source: '/v1/traces',  destination: '/api/ingest/otel/v1/traces' },
+      { source: '/v1/logs',    destination: '/api/ingest/otel/v1/logs' },
+      { source: '/v1/metrics', destination: '/api/ingest/otel/v1/metrics' },
+    ];
+
+    // Backward-compat aliases: after the layered restructure, legacy flat
+    // /api/* URLs continue to resolve to the new ingest/observe/eval/* paths.
+    // External clients (uploaders, watchers, OpenCode plugins, OTel collectors)
+    // and any cached frontend code may still hit the old paths.
+    const legacyAliases: { source: string; destination: string }[] = [
+      // ingest layer
+      { source: '/api/otel/v1/:path*',         destination: '/api/ingest/otel/v1/:path*' },
+      { source: '/api/proxy/:taskId/:path*',   destination: '/api/ingest/proxy/:taskId/:path*' },
+      { source: '/api/proxy/:taskId',          destination: '/api/ingest/proxy/:taskId' },
+      { source: '/api/upload',                 destination: '/api/ingest/upload' },
+      { source: '/api/parse-document',         destination: '/api/ingest/parse-document' },
+      { source: '/api/setup',                  destination: '/api/ingest/setup' },
+      { source: '/api/setup/:path*',           destination: '/api/ingest/setup/:path*' },
+      { source: '/api/sync/:path*',            destination: '/api/ingest/sync/:path*' },
+      { source: '/api/v1/:path*',              destination: '/api/ingest/v1/:path*' },
+
+      // observe layer
+      { source: '/api/data',                   destination: '/api/observe/data' },
+      { source: '/api/session',                destination: '/api/observe/session' },
+      { source: '/api/executions/:path*',      destination: '/api/observe/executions/:path*' },
+      { source: '/api/task-stats',             destination: '/api/observe/task-stats' },
+
+      // eval layer
+      { source: '/api/settings',               destination: '/api/eval/settings' },
+      { source: '/api/settings/test',          destination: '/api/eval/settings/test' },
+      { source: '/api/rejudge',                destination: '/api/eval/rejudge' },
+      { source: '/api/evaluation',             destination: '/api/eval/evaluation' },
+      { source: '/api/config',                 destination: '/api/eval/config' },
+      { source: '/api/config/:path*',          destination: '/api/eval/config/:path*' },
+    ];
+
+    const rewrites = [...baseRewrites, ...legacyAliases];
+
+    if (urlPrefix) {
+      rewrites.push({
+        source: `${urlPrefix}/api/:path*`,
+        destination: '/api/:path*',
+      });
+    }
+
+    return rewrites;
+  },
+};
+
+export default nextConfig;

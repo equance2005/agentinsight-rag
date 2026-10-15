@@ -1,0 +1,372 @@
+#!/usr/bin/env node
+
+const { spawn, spawnSync, execSync } = require('child_process')
+const fs = require('fs')
+const path = require('path')
+
+const {
+  findPidOnPort,
+  getPort,
+  ensureEnvFile,
+  ensureDataDirectory,
+  runCommand,
+  sleep,
+  getDataRoot
+} = require('./utils.js')
+const { syncAdminApiKey } = require('./sync_admin_api_key.js')
+const { resolveStartupDatabaseUrl } = require('./agent-insight-home.cjs')
+const { syncGeneratedPrismaClient } = require('./sync-prisma-client.js')
+const {
+  readCurrentRuntime,
+  resolveBootstrapPython,
+  verifyManagedPython,
+} = require('./lib/fi-python-runtime.js')
+
+const PACKAGE_ROOT = path.resolve(__dirname, '..')
+
+const isWindows = process.platform === 'win32'
+const pythonCmd = isWindows ? 'python' : 'python3'
+const pipCmd = isWindows ? 'pip' : 'pip3'
+
+function loadEnvFile(envPath) {
+  if (!fs.existsSync(envPath)) return {}
+
+  const content = fs.readFileSync(envPath, 'utf8')
+  const env = {}
+
+  content.split('\n').forEach(line => {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#')) return
+
+    const match = trimmed.match(/^([^=]+)=(.*)$/)
+    if (match) {
+      const key = match[1].trim()
+      let value = match[2].trim()
+      if ((value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1)
+      }
+      env[key] = value
+    }
+  })
+
+  return env
+}
+
+function ensureGoalPlusWatcher({ dataRoot, packageRoot = PACKAGE_ROOT }) {
+  const collectorPath = path.join(packageRoot, 'scripts', 'agent-trace-collectors', 'goal-plus', 'goal-plus-collector.cjs')
+  const configPath = path.join(dataRoot, 'collectors', 'goal-plus', 'config.json')
+  if (!fs.existsSync(configPath) || !fs.existsSync(collectorPath)) return null
+
+  const rawInterval = Number(process.env.AGENT_INSIGHT_GOAL_PLUS_INTERVAL_MS || 5000)
+  const intervalMs = Number.isFinite(rawInterval) && rawInterval >= 1000 ? Math.floor(rawInterval) : 5000
+  const child = spawnSync(process.execPath, [
+    collectorPath,
+    'ensure',
+    '--config',
+    configPath,
+    '--interval-ms',
+    String(intervalMs),
+  ], { encoding: 'utf8', env: process.env })
+  if (child.error) throw child.error
+  if (child.status !== 0) throw new Error((child.stderr || child.stdout || `exit ${child.status}`).trim())
+  try {
+    return JSON.parse(child.stdout)
+  } catch {
+    throw new Error(`Goal Plus watcher returned an invalid status: ${child.stdout.trim()}`)
+  }
+}
+
+let spawnedProc = null
+
+function cleanup() {
+  if (spawnedProc) {
+    try {
+      spawnedProc.kill()
+    } catch (e) {}
+  }
+}
+
+process.on('SIGINT', () => {
+  console.log('\nReceived SIGINT, cleaning up...')
+  cleanup()
+  process.exit(0)
+})
+
+process.on('SIGTERM', () => {
+  console.log('\nReceived SIGTERM, cleaning up...')
+  cleanup()
+  process.exit(0)
+})
+
+async function run(options) {
+  const port = getPort(options)
+  const dataRoot = getDataRoot()
+  const fileEnv = loadEnvFile(path.join(dataRoot, '.env'))
+  const dbUrl = resolveStartupDatabaseUrl(fileEnv, process.env, dataRoot)
+  const dbPath = dbUrl.startsWith('file:') ? dbUrl.slice(5) : dbUrl
+  process.env.AGENT_INSIGHT_HOME = dataRoot
+
+  console.log('=== Starting Agent-Insight Service ===\n')
+
+  ensureEnvFile()
+  ensureDataDirectory()
+  console.log()
+
+  const existingPid = findPidOnPort(port)
+  if (existingPid) {
+    console.log(`⚠️  Port ${port} is already in use by PID: ${existingPid}`)
+    console.log('Please stop the existing service first or use a different port.')
+    console.log(`\nTo stop: npx agent-insight stop --port ${port}`)
+    process.exit(1)
+  }
+
+  process.env.DATABASE_URL = dbUrl
+  const standaloneServer = path.join(PACKAGE_ROOT, '.next', 'standalone', 'server.js')
+  const standaloneDir = path.dirname(standaloneServer)
+
+  const envPath = path.join(dataRoot, '.env')
+
+  if (fileEnv.DB_HOST) {
+    console.log('OpenGauss configuration detected (DB_HOST=' + fileEnv.DB_HOST + ')')
+    console.log('Initializing OpenGauss database with project schema...')
+
+    try {
+      execSync(`${pythonCmd} -c "import psycopg2"`, { stdio: 'pipe' })
+    } catch (e) {
+      console.log('psycopg2 not found. Installing psycopg2-binary...')
+      try {
+        execSync(`${pipCmd} install psycopg2-binary`, { stdio: 'inherit' })
+      } catch (pipError) {
+        console.log('Warning: Could not install psycopg2-binary. OpenGauss init may fail.')
+      }
+    }
+
+    const initScript = path.join(PACKAGE_ROOT, 'scripts', 'init_opengauss.py')
+    if (fs.existsSync(initScript)) {
+      try {
+        const initEnv = { ...process.env, ...fileEnv }
+        execSync(`${pythonCmd} "${initScript}"`, {
+          stdio: 'inherit',
+          cwd: PACKAGE_ROOT,
+          env: initEnv
+        })
+        console.log('✓ OpenGauss initialized successfully')
+      } catch (initError) {
+        console.error('Warning: OpenGauss initialization failed:', initError.message)
+        console.error(`You may need to run it manually: ${pythonCmd} scripts/init_opengauss.py`)
+      }
+    } else {
+      console.log('Warning: init_opengauss.py not found, skipping OpenGauss init')
+    }
+    console.log()
+  }
+
+  try {
+    console.log('Generating Prisma client...')
+    await runCommand('npx prisma generate', {
+      cwd: PACKAGE_ROOT,
+      env: { ...process.env, DATABASE_URL: dbUrl }
+    })
+    syncGeneratedPrismaClient(
+      PACKAGE_ROOT,
+      fs.existsSync(standaloneServer) ? standaloneDir : undefined
+    )
+    console.log('✓ Prisma client generated')
+    console.log()
+
+    console.log('Syncing database schema...')
+    await runCommand('node scripts/prepare-ras-sqlite-schema.js', {
+      cwd: PACKAGE_ROOT,
+      env: { ...process.env, DATABASE_URL: dbUrl }
+    })
+    await runCommand('npx prisma db push', {
+      cwd: PACKAGE_ROOT,
+      env: { ...process.env, DATABASE_URL: dbUrl }
+    })
+    console.log('✓ Database schema synced')
+    console.log()
+  } catch (error) {
+    console.error('❌ Database initialization failed:', error.message)
+    console.error('')
+    console.error('   若报错提示 data loss / --accept-data-loss，说明现有数据库')
+    console.error(`   ${dbPath}`)
+    console.error('   里有新 schema 需要删除的数据（prisma 拒绝破坏性变更）。恢复方式：')
+    console.error('   1) 备份后原地迁移（接受丢弃冲突项）：')
+    console.error(`        cp "${dbPath}" "${dbPath}.bak"`)
+    console.error(`        DATABASE_URL="${dbUrl}" npx prisma db push --accept-data-loss`)
+    console.error('   2) 全新开始：把旧库移走后重新 start，会自动建新库。')
+    process.exit(1)
+  }
+
+  const isStandalone = fs.existsSync(standaloneServer)
+  const nextDir = path.join(PACKAGE_ROOT, '.next')
+  const isProduction = fs.existsSync(nextDir) && fs.existsSync(path.join(nextDir, 'BUILD_ID'))
+
+  // Next standalone 不会自动带上 browser 静态资源；缺了就会 404 → 前端 Application error。
+  if (isStandalone) {
+    const standaloneRoot = path.join(PACKAGE_ROOT, '.next', 'standalone')
+    const staticSrc = path.join(PACKAGE_ROOT, '.next', 'static')
+    const staticDest = path.join(standaloneRoot, '.next', 'static')
+    const publicSrc = path.join(PACKAGE_ROOT, 'public')
+    const publicDest = path.join(standaloneRoot, 'public')
+    fs.mkdirSync(path.join(standaloneRoot, '.next'), { recursive: true })
+    if (fs.existsSync(staticSrc)) {
+      fs.rmSync(staticDest, { recursive: true, force: true })
+      fs.cpSync(staticSrc, staticDest, { recursive: true })
+      console.log('✓ Synced .next/static → standalone')
+    } else {
+      console.warn('⚠️  Missing .next/static; UI chunks will 404 until you run npm run build')
+    }
+    if (fs.existsSync(publicSrc)) {
+      fs.rmSync(publicDest, { recursive: true, force: true })
+      fs.cpSync(publicSrc, publicDest, { recursive: true })
+      console.log('✓ Synced public → standalone')
+    }
+  }
+
+  console.log(`Starting server on port ${port}...`)
+
+  const logPath = path.join(dataRoot, 'server.log')
+
+  // WSS 控制通道要接管 upgrade 事件，Next 的 Route Handler 做不到，
+  // 因此 standalone 下由 control-server.js 承载 Next + WSS。
+  const dispatchPort = Number(process.env.AGENT_INSIGHT_RAS_DISPATCH_PORT || port + 1)
+
+  const runtimeEnv = { ...fileEnv, ...process.env }
+  const currentFiRuntime = readCurrentRuntime()
+  const managedFiPython = currentFiRuntime?.python
+    && verifyManagedPython(currentFiRuntime.python)
+    ? currentFiRuntime
+    : null
+  const fiPython = managedFiPython || resolveBootstrapPython({
+    env: runtimeEnv,
+    requiredImports: ['yaml'],
+  })
+  const rasPython = resolveBootstrapPython({
+    env: runtimeEnv,
+    requiredImports: ['pydantic'],
+  })
+  if (fiPython) {
+    runtimeEnv.AGENT_INSIGHT_FI_PYTHON =
+      runtimeEnv.AGENT_INSIGHT_FI_PYTHON || fiPython.python || fiPython.executable
+    console.log(`FI Python runtime: ${runtimeEnv.AGENT_INSIGHT_FI_PYTHON}`)
+  } else {
+    console.warn('⚠️  Python 3.11+ with PyYAML not found; fault injection is unavailable')
+  }
+  if (rasPython) {
+    runtimeEnv.AGENT_INSIGHT_RAS_PYTHON =
+      runtimeEnv.AGENT_INSIGHT_RAS_PYTHON || rasPython.executable
+    console.log(`RAS Python runtime: ${rasPython.executable} (${rasPython.versionText})`)
+  } else {
+    console.warn('⚠️  Python 3.11+ with pydantic not found; RAS config catalog is unavailable')
+  }
+
+  const env = {
+    ...runtimeEnv,
+    DATABASE_URL: dbUrl,
+    PORT: port.toString(),
+    HOSTNAME: '0.0.0.0',
+    AGENT_INSIGHT_PACKAGE_ROOT: PACKAGE_ROOT,
+    AGENT_INSIGHT_RAS_DISPATCH_PORT: dispatchPort.toString()
+  }
+
+  let command, args
+
+  if (isStandalone) {
+    const controlServer = path.join(PACKAGE_ROOT, 'scripts', 'control-server.js')
+    if (fs.existsSync(controlServer)) {
+      console.log('Mode: production (standalone + control channel)')
+      command = 'node'
+      args = [controlServer]
+    } else {
+      console.log('Mode: production (standalone)')
+      command = 'node'
+      args = [standaloneServer]
+    }
+  } else if (isProduction) {
+    console.log('Mode: production')
+    command = 'npm'
+    args = ['run', 'start']
+  } else {
+    console.log('Mode: development')
+    command = 'npm'
+    args = ['run', 'dev']
+  }
+
+  try {
+    const logFd = fs.openSync(logPath, 'a')
+
+    if (isWindows) {
+      spawnedProc = spawn(command, args, {
+        stdio: ['ignore', logFd, logFd],
+        env,
+        detached: true,
+        cwd: PACKAGE_ROOT,
+        windowsHide: true
+      })
+    } else {
+      spawnedProc = spawn(command, args, {
+        stdio: ['ignore', logFd, logFd],
+        env,
+        detached: true,
+        cwd: PACKAGE_ROOT
+      })
+    }
+
+    spawnedProc.on('error', (error) => {
+      console.error('❌ Failed to spawn process:', error.message)
+      process.exit(1)
+    })
+
+    spawnedProc.unref()
+  } catch (error) {
+    console.error('❌ Failed to spawn process:', error.message)
+    process.exit(1)
+  }
+
+  const maxRetries = 10
+  const retryDelay = 500
+
+  for (let i = 0; i < maxRetries; i++) {
+    await sleep(retryDelay)
+    const pid = findPidOnPort(port)
+    if (pid) {
+      console.log('✓ Server started successfully')
+      console.log(`  PID: ${pid}`)
+      console.log(`  Port: ${port}`)
+      console.log(`  Log: ${logPath}`)
+      console.log(`  URL: http://localhost:${port}`)
+      try {
+        const syncResult = await syncAdminApiKey({ port, dataRoot, host: `http://localhost:${port}` })
+        console.log(
+          syncResult.preservedClientApiKey
+            ? '✓ Admin API key saved; existing client identity preserved'
+            : '✓ Admin API key synced to client env',
+        )
+      } catch (error) {
+        console.log('⚠️  Failed to sync admin API key:', error.message)
+      }
+      try {
+        const watcher = ensureGoalPlusWatcher({ dataRoot })
+        if (watcher?.ensured) {
+          console.log(watcher.alreadyRunning
+            ? `✓ Goal Plus watcher already running (PID ${watcher.pid})`
+            : `✓ Goal Plus watcher started (PID ${watcher.pid})`)
+        } else if (watcher?.reason === 'no_sources') {
+          console.log('ℹ️  Goal Plus watcher not started: no .gp source is attached')
+        } else if (watcher?.reason === 'not_configured') {
+          console.log('ℹ️  Goal Plus watcher not started: collector API key is not configured')
+        }
+      } catch (error) {
+        console.log('⚠️  Goal Plus watcher could not be started; Agent Insight remains available:', error.message)
+      }
+      return
+    }
+  }
+
+  console.error('❌ Failed to start server. Check server.log for details.')
+  process.exit(1)
+}
+
+module.exports = { ensureGoalPlusWatcher, resolveStartupDatabaseUrl, run }

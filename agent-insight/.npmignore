@@ -1,0 +1,88 @@
+# Development files
+.env
+.env.local
+.env.*.local
+
+# Build artifacts - DO NOT exclude .next for production
+out
+dist
+build
+
+# Dependencies
+node_modules
+
+# Log files
+server.log
+*.log
+scripts/**/__pycache__/
+scripts/**/*.pyc
+scripts/otel_data/
+scripts/**/*.jsonl
+scripts/**/*.jsonl.*
+
+# Temporary files
+.DS_Store
+*.swp
+*.swo
+*~
+
+# IDE configurations
+.idea
+.vscode
+.trae
+*.iml
+.agents
+.codex
+AGENTS.md
+
+# Test coverage
+coverage
+.nyc_output
+
+# TypeScript cache
+tsconfig.tsbuildinfo
+
+# Data directory (user data, not part of package)
+data/
+
+# Database files (should be created by user)
+prisma/dev.db
+*.db
+*.db-journal
+
+# Exclude specific directories and files
+skills/
+README.md
+docs/
+features/
+
+# Development only
+.next/cache
+
+# Exclude unnecessary files from standalone
+.next/standalone/docs/
+.next/standalone/data/
+.next/standalone/src/
+.next/standalone/skills/
+.next/standalone/README.md
+.next/standalone/.env
+.next/standalone/server.log
+.next/standalone/prisma/dev.db
+
+# Local/temp & non-runtime project dirs that next build sweeps into standalone
+exclude/
+.next/standalone/exclude/
+.next/standalone/tests/
+.next/standalone/test/
+.next/standalone/skillbench/
+.next/standalone/features/
+.next/standalone/tools/
+
+# Agent RAS development-only content
+agent_ras/tests/
+agent_ras/docs/
+agent_ras/scripts/
+agent_ras/logs/
+agent_ras/**/__pycache__/
+agent_ras/**/*.pyc
+agent_ras/.pytest_cache/

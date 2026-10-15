@@ -1,0 +1,85 @@
+import { NextResponse } from 'next/server';
+import {
+  buildAgentDatasetItemsView,
+  deleteAgentDataset,
+  findAgentDataset,
+} from '@/server/agent_datasets_storage';
+import { isBuiltinReliabilityDataset } from '@/lib/agent-dataset-builtin';
+import { recordUsageEvent } from '@/lib/usage-analytics/collector';
+import {
+  decoratePublicBenchmarkDatasets,
+  isReadOnlyBenchmarkDataset,
+} from '@/lib/benchmark/public-dataset';
+
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const user = (searchParams.get('user') || '').trim();
+    if (!user || !id?.trim()) {
+      return NextResponse.json({ error: 'user and id are required' }, { status: 400 });
+    }
+
+    const dataset = await findAgentDataset(user, id.trim());
+    if (!dataset) {
+      return NextResponse.json({ error: 'dataset not found' }, { status: 404 });
+    }
+
+    const decorated = (await decoratePublicBenchmarkDatasets(user, [dataset]))[0];
+    const view = searchParams.get('view');
+    if (view === 'case') {
+      const caseId = (searchParams.get('caseId') || '').trim();
+      if (!caseId) return NextResponse.json({ error: 'caseId is required' }, { status: 400 });
+      const datasetCase = decorated.cases.find(item => item.id === caseId);
+      if (!datasetCase) return NextResponse.json({ error: 'dataset case not found' }, { status: 404 });
+      return NextResponse.json(datasetCase);
+    }
+    return NextResponse.json(view === 'items' ? buildAgentDatasetItemsView(decorated) : decorated);
+  } catch (error) {
+    console.error('agent-datasets [id] GET error:', error);
+    return NextResponse.json({ error: 'failed to load dataset' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const user = (searchParams.get('user') || '').trim();
+    const idTrim = id?.trim() || '';
+    if (!user || !idTrim) {
+      return NextResponse.json({ error: 'user and id are required' }, { status: 400 });
+    }
+
+    const existing = await findAgentDataset(user, idTrim);
+    if (!existing) {
+      return NextResponse.json({ error: 'dataset not found' }, { status: 404 });
+    }
+    if (isBuiltinReliabilityDataset(existing)) {
+      return NextResponse.json(
+        { error: '内置可靠性评测集不可删除' },
+        { status: 403 },
+      );
+    }
+    if (existing.datasetKind === 'benchmark' || await isReadOnlyBenchmarkDataset(user, idTrim)) {
+      return NextResponse.json(
+        { error: 'Benchmark 数据集由系统导入并维护，不可删除' },
+        { status: 403 },
+      );
+    }
+
+    const removed = await deleteAgentDataset(user, idTrim);
+    if (!removed) {
+      return NextResponse.json({ error: 'dataset not found' }, { status: 404 });
+    }
+
+    recordUsageEvent({ user, featureKey: 'dataset', eventKey: 'dataset.delete' });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('agent-datasets [id] DELETE error:', error);
+    return NextResponse.json({ error: 'failed to delete dataset' }, { status: 500 });
+  }
+}

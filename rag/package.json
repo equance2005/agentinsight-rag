@@ -1,0 +1,33 @@
+{
+  "name": "kb-assistant",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "通用知识库问答助手 — 可嵌入任意网站的有据可依问答服务",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:widget": "node scripts/build-widget.mjs",
+    "cli": "node --experimental-transform-types --import ./scripts/register.mjs bin/cli.ts",
+    "serve": "node --experimental-transform-types --import ./scripts/register.mjs src/server/start.ts",
+    "test": "node --experimental-transform-types --import ./scripts/register.mjs scripts/run-tests.mjs",
+    "acceptance": "node --experimental-transform-types --import ./scripts/register.mjs scripts/acceptance.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "verify": "npm run typecheck && npm run build:widget && npm test && npm run acceptance"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "gray-matter": "^4.0.3",
+    "mammoth": "^1.8.0",
+    "pdf-parse": "^1.1.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
