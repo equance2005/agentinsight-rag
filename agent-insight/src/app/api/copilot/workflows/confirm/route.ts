@@ -13,6 +13,9 @@ export async function POST(request: Request) {
     const confirmationToken = String(body.confirmationToken || '');
     if (!confirmationToken) return NextResponse.json({ error: 'confirmationToken is required' }, { status: 400 });
     const action = String(body.action || 'trace_to_dataset');
+    if (action === 'run_filter') {
+      return NextResponse.json({ error: 'Trace 查询是只读操作，不需要确认写入' }, { status: 400 });
+    }
     const result = action === 'evaluator_draft'
       ? await confirmEvaluatorDraft(auth.username, confirmationToken)
       : action === 'dataset_delete'

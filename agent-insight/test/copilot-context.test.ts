@@ -23,3 +23,9 @@ test('copilot routes current trace analysis to context mode', () => {
   const route = classifyIntent('这条 Trace 里模型和 Skill 分别做了什么？', true);
   assert.equal(route.intent, 'context_analysis');
 });
+
+test('copilot routes Trace listing requests to the read-only Trace tool', () => {
+  const route = classifyIntent('查询最近失败的 Trace', false);
+  assert.equal(route.intent, 'workflow_draft');
+  assert.equal(route.action, 'run_filter');
+});

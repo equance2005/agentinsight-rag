@@ -154,11 +154,11 @@ export function SkillWorkbenchShell() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     window.dispatchEvent(new CustomEvent('agent-insight:copilot-context', {
-      detail: selectedAsset?.id
+      detail: selectedAsset
         ? {
             pageType: 'skill',
-            objectType: 'skillVersion',
-            objectId: selectedAsset.id,
+            objectType: selectedAsset.id ? 'skillVersion' : 'unknown',
+            objectId: selectedAsset.id || undefined,
             sessionId: selectedAsset.sessionId || undefined,
             version: selectedAsset.version,
             snapshot: { title: `${selectedAsset.skillName} v${selectedAsset.version}` },

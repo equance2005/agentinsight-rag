@@ -134,10 +134,26 @@ export async function confirmEvaluatorDraft(user: string, previewToken: string):
 
 export async function buildRunFilterPreview(context: CopilotContextResult, input: WorkflowInput): Promise<WorkflowPreview> {
   const query = String(input.instructions || '').trim();
-  if (!query) throw new Error('请提供运行筛选条件');
-  const tokens = query.toLowerCase().split(/\s+/).filter(item => item.length >= 2).slice(0, 8);
+  if (!query) throw new Error('请提供 Trace 查询条件');
+  const normalizedQuery = query.toLowerCase();
+  const stopWords = /查询|查找|列出|找出|查看|搜索|筛选|最近|当前|所有|失败|错误|成功|完成|的|个|条|trace|链路|运行|执行|记录|traces|runs|executions|list|find|search|show|filter|recent/gi;
+  const tokens = normalizedQuery
+    .replace(stopWords, ' ')
+    .split(/[\s,，。！？?、:：;；]+/)
+    .map(item => item.trim())
+    .filter(item => item.length >= 2)
+    .slice(0, 8);
+  const statusFilter = /失败|错误|failed|error/i.test(normalizedQuery)
+    ? 'failed'
+    : /成功|完成|succeeded|success|completed/i.test(normalizedQuery)
+      ? 'success'
+      : null;
   const rows = await db.findExecutions({ user: context.envelope.user }, { timestamp: 'desc' });
   const matches = rows.filter((row: any) => {
+    const status = String(row.traceStatus || row.status || '').toLowerCase();
+    if (statusFilter === 'failed' && !['failed', 'error', 'failure'].some(value => status.includes(value))) return false;
+    if (statusFilter === 'success' && !['success', 'completed', 'succeeded', 'done'].some(value => status.includes(value))) return false;
+    if (!tokens.length) return true;
     const haystack = [row.query, row.finalResult, row.agentName, row.framework, row.skill, row.model, row.taskId]
       .map(value => String(value || '').toLowerCase()).join('\n');
     return tokens.every(token => haystack.includes(token));
@@ -151,7 +167,7 @@ export async function buildRunFilterPreview(context: CopilotContextResult, input
     status: row.traceStatus || row.status || null,
   }));
   const expiresAt = Date.now() + PREVIEW_TTL_MS;
-  const changes = { query, count: matches.length, matches };
+  const changes = { query, count: matches.length, statusFilter, matches, readOnly: true };
   const previewId = randomUUID();
   const confirmationToken = token({ previewId, user: context.envelope.user, action: 'run_filter', expiresAt, changes });
   return { previewId, action: 'run_filter', target: '运行列表', changes, sources: [], missing: [], expiresAt: new Date(expiresAt).toISOString(), confirmationToken };
@@ -191,14 +207,22 @@ export async function buildExperimentStartPreview(context: CopilotContextResult,
   });
   if (!experiment) throw new Error('实验不存在或无权访问');
   const evaluatorIds = (() => { try { const value = JSON.parse(experiment.evaluatorIdsJson || '[]'); return Array.isArray(value) ? value : []; } catch { return []; } })();
+  const evaluatorConfigs = (() => { try { return JSON.parse(experiment.evaluatorConfigsJson || '{}'); } catch { return {}; } })();
+  const configSnapshot = (() => { try { return JSON.parse(experiment.configSnapshotJson || 'null'); } catch { return null; } })();
   const expiresAt = Date.now() + PREVIEW_TTL_MS;
   const changes = {
     experimentId: experiment.id,
     name: experiment.name,
+    type: experiment.type,
     status: experiment.status,
     agentName: experiment.agentName,
+    skillName: experiment.skillName,
+    skillVersion: experiment.skillVersion,
+    preset: experiment.preset,
     caseCount: experiment._count.cases,
     evaluatorIds,
+    evaluatorConfigs,
+    configSnapshot,
     requiresConfirmation: true,
   };
   const previewId = randomUUID();
@@ -214,8 +238,46 @@ export async function buildExperimentStartPreview(context: CopilotContextResult,
 export async function confirmExperimentStart(user: string, previewToken: string): Promise<{ experimentId: string; status: string; alreadyRunning?: boolean }> {
   const payload = decode(previewToken);
   if (payload.user !== user || payload.action !== 'experiment_start') throw new Error('确认令牌与当前用户或操作不匹配');
-  const experimentId = String((payload.changes as { experimentId?: string }).experimentId || '').trim();
+  const expected = payload.changes as {
+    experimentId?: string;
+    name?: string;
+    type?: string;
+    status?: string;
+    agentName?: string | null;
+    skillName?: string;
+    skillVersion?: number | null;
+    preset?: string | null;
+    caseCount?: number;
+    evaluatorIds?: unknown[];
+    evaluatorConfigs?: unknown;
+    configSnapshot?: unknown;
+  };
+  const experimentId = String(expected.experimentId || '').trim();
   if (!experimentId) throw new Error('确认令牌缺少实验 ID');
+  const current = await (prismaRaw as any).experiment.findFirst({
+    where: { id: experimentId, user },
+    include: { _count: { select: { cases: { where: { deletedAt: null } } } } },
+  });
+  if (!current) throw new Error('实验不存在或无权访问');
+  const currentEvaluatorIds = (() => {
+    try {
+      const value = JSON.parse(current.evaluatorIdsJson || '[]');
+      return Array.isArray(value) ? value : [];
+    } catch {
+      return [];
+    }
+  })();
+  const currentEvaluatorConfigs = (() => { try { return JSON.parse(current.evaluatorConfigsJson || '{}'); } catch { return {}; } })();
+  const currentConfigSnapshot = (() => { try { return JSON.parse(current.configSnapshotJson || 'null'); } catch { return null; } })();
+  const sameEvaluators = JSON.stringify(currentEvaluatorIds) === JSON.stringify(Array.isArray(expected.evaluatorIds) ? expected.evaluatorIds : []);
+  const sameEvaluatorConfigs = JSON.stringify(currentEvaluatorConfigs) === JSON.stringify(expected.evaluatorConfigs ?? {});
+  const sameConfigSnapshot = JSON.stringify(currentConfigSnapshot) === JSON.stringify(expected.configSnapshot ?? null);
+  if (current.name !== expected.name || current.type !== expected.type || current.status !== expected.status
+    || (current.agentName || null) !== (expected.agentName || null) || current.skillName !== expected.skillName
+    || (current.skillVersion ?? null) !== (expected.skillVersion ?? null) || (current.preset || null) !== (expected.preset || null)
+    || current._count.cases !== Number(expected.caseCount ?? -1) || !sameEvaluators || !sameEvaluatorConfigs || !sameConfigSnapshot) {
+    throw new Error('实验配置在确认前已发生变化，请重新预览当前配置');
+  }
   const result = await startExperimentRun(experimentId, user);
   if (!result) throw new Error('实验不存在或无权访问');
   return { experimentId, status: result.status, ...(result.alreadyRunning ? { alreadyRunning: true } : {}) };

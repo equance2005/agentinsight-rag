@@ -48,6 +48,29 @@ export async function updateCopilotRunStep(input: {
 }) {
   const run = await (prismaRaw as any).copilotRun.findFirst({ where: { id: input.runId, user: input.user }, select: { id: true } });
   if (!run) return null;
+  const current = await (prismaRaw as any).copilotRunStep.findFirst({
+    where: { id: input.stepId, runId: input.runId },
+    select: { id: true, stepKey: true, dependsOnJson: true },
+  });
+  if (!current) return null;
+  if (input.status === 'in_progress' || input.status === 'done') {
+    let dependencyKeys: string[] = [];
+    try {
+      const parsed = JSON.parse(current.dependsOnJson || '[]');
+      dependencyKeys = Array.isArray(parsed) ? parsed.map(String).filter(Boolean) : [];
+    } catch {
+      dependencyKeys = [];
+    }
+    if (dependencyKeys.length > 0) {
+      const dependencies = await (prismaRaw as any).copilotRunStep.findMany({
+        where: { runId: input.runId, stepKey: { in: dependencyKeys } },
+        select: { stepKey: true, status: true },
+      });
+      const statusByKey = new Map(dependencies.map((step: any) => [step.stepKey, step.status]));
+      const unfinished = dependencyKeys.filter(key => statusByKey.get(key) !== 'done');
+      if (unfinished.length > 0) throw new Error(`步骤依赖尚未完成：${unfinished.join('、')}`);
+    }
+  }
   const step = await (prismaRaw as any).copilotRunStep.updateMany({
     where: { id: input.stepId, runId: input.runId },
     data: {

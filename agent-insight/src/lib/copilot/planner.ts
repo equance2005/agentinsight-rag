@@ -43,7 +43,7 @@ export function buildCopilotPlan(message: string, route: CopilotRoute, context: 
     ]);
   }
   if (route.action === 'run_filter') {
-    return plan('按条件查找运行记录', [
+    return plan('使用 Trace 查询工具按条件查找运行记录', [
       { title: '读取当前用户的运行记录', tool: 'list_executions', kind: 'read' },
       { title: '应用筛选条件并返回匹配结果', tool: 'filter_executions', kind: 'analyze', dependsOn: ['1'] },
     ]);

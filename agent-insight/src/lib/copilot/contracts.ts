@@ -70,7 +70,9 @@ export function classifyIntent(message: string, hasContext: boolean): CopilotRou
   const startExperiment = /(?:启动|运行|开始|start|run).*(?:实验|评测|experiment)/i.test(text);
   const publishSkill = /(?:发布|publish).*(?:skill|技能)/i.test(text);
   const lifecycle = /(?:全流程|闭环|回归实验|端到端|end.?to.?end|regression)/i.test(text);
+  const traceQuery = /(?:查询|查找|列出|找出|查看|搜索|筛选|最近|失败|成功).*(?:trace|链路|运行|执行)|(?:trace|链路|运行|执行).*(?:查询|查找|列出|找出|查看|搜索|筛选|最近|失败|成功)|(?:filter|find|list|search|show).*(?:run|trace|execution)/i.test(text);
   const filter = /筛选|查找.*(?:运行|trace)|找出.*(?:运行|trace)|filter.*(?:run|trace)|find.*(?:run|trace)/i.test(text);
+  const contextualObject = hasContext && /当前|这条|这个|本次|this|current/i.test(text);
   const command = /创建|生成|起草|调整|修改|准备|帮.*(?:做|写)|create|draft|generate|update/i.test(text);
   const negated = /不要.*(?:创建|生成|修改)|不.*执行|do not|don't/i.test(text);
   if (howTo) return { intent: 'how_to', reason: '方法咨询，只解释操作步骤' };
@@ -79,7 +81,7 @@ export function classifyIntent(message: string, hasContext: boolean): CopilotRou
   if (startExperiment) return { intent: 'workflow_draft', action: 'experiment_start', reason: '启动实验前展示冻结配置并等待确认' };
   if (publishSkill) return { intent: 'workflow_draft', action: 'skill_publish', reason: '发布 Skill 前必须通过质量门禁并等待确认' };
   if (lifecycle) return { intent: 'workflow_draft', reason: '创建跨模块 TodoList，按依赖逐步执行并在写操作前确认' };
-  if (filter) return { intent: 'workflow_draft', action: 'run_filter', reason: '执行可回查的只读运行筛选' };
+  if ((traceQuery && !contextualObject) || filter) return { intent: 'workflow_draft', action: 'run_filter', reason: '使用 Trace 查询工具执行可回查的只读运行筛选' };
   if (command && sample && evaluator) return { intent: 'clarify', reason: '请先选择创建样例或起草评估器中的一个操作' };
   if (command && sample) return { intent: hasContext ? 'workflow_draft' : 'clarify', action: 'trace_to_dataset', reason: '先准备 Trace 样例草稿，确认后保存' };
   if (command && evaluator) return { intent: 'workflow_draft', action: 'evaluator_draft', reason: '准备可编辑的评估器草稿' };

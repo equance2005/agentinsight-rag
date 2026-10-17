@@ -281,6 +281,9 @@ export default function CopilotDrawer() {
       if (payload.workflowResult && payload.preview?.action === 'evaluator_draft') {
         setMessages(current => [...current, { role: 'assistant', content: `评估器草稿已创建：${payload.preview.target}` }]);
       }
+      if (payload.react?.status === 'awaiting_confirmation' && Array.isArray(payload.react.proposedActions) && payload.react.proposedActions.length > 0) {
+        setMessages(current => [...current, { role: 'assistant', content: `诊断已完成，等待确认：${payload.react.proposedActions.join('；')}` }]);
+      }
       setPlan(payload.plan && Array.isArray(payload.plan.steps)
         ? payload.plan as CopilotPlan
         : payload.react && Array.isArray(payload.react.steps)
@@ -323,14 +326,14 @@ export default function CopilotDrawer() {
     event.target.value = '';
   }
 
-  async function createPreview(action: Preview['action']) {
+  async function createPreview(action: Preview['action'], input: Record<string, unknown> = {}) {
     setBusy(true);
     setError('');
     try {
       const response = await fetch('/api/copilot/workflows/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, context, input: {} }),
+        body: JSON.stringify({ action, context, input }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(String(payload.error || '无法生成工作流草稿'));
@@ -356,7 +359,7 @@ export default function CopilotDrawer() {
   }
 
   async function confirmPreview() {
-    if (!preview) return;
+    if (!preview || preview.action === 'run_filter') return;
     setBusy(true);
     setError('');
     try {
@@ -401,7 +404,7 @@ export default function CopilotDrawer() {
                 <div style={styles.workflowRow}>
                   <button type="button" className="copilot-workflow-button" onClick={() => void createPreview('trace_to_dataset')} style={styles.workflowButton}>Trace → 数据集</button>
                   <button type="button" className="copilot-workflow-button" onClick={() => void createPreview('evaluator_draft')} style={styles.workflowButton}>评估器草稿</button>
-                  <button type="button" className="copilot-workflow-button" onClick={() => void createPreview('run_filter')} style={styles.workflowButton}>运行筛选</button>
+                  <button type="button" className="copilot-workflow-button" onClick={() => void createPreview('run_filter', { instructions: '列出最近的 Trace' })} style={styles.workflowButton}>运行筛选</button>
                 </div>
               </section>
             )}
@@ -438,7 +441,7 @@ export default function CopilotDrawer() {
                 {showTraceSteps && traceSteps.map(source => <a href={source.href || '#'} key={source.id} style={styles.source}><FileText size={14} /><span>{source.label}</span><span style={styles.sourceLocator}>{source.locator}</span></a>)}
               </section>;
             })()}
-            {preview && <section style={styles.preview}><div style={styles.sectionLabel}>工作流草稿 · {preview.target}</div><pre style={styles.previewJson}>{JSON.stringify(preview.changes, null, 2)}</pre>{preview.missing.length > 0 && <div style={styles.missing}>还缺少：{preview.missing.join('、')}</div>}<div style={styles.previewActions}><button type="button" onClick={() => setPreview(null)} style={styles.secondaryButton}>取消</button><button type="button" disabled={busy} onClick={confirmPreview} style={styles.primaryButton}>{preview.action === 'dataset_delete' ? '确认删除' : preview.action === 'experiment_start' ? '确认启动' : preview.action === 'skill_publish' ? '确认发布' : '确认写入'}</button></div></section>}
+            {preview && <section style={styles.preview}><div style={styles.sectionLabel}>{preview.action === 'run_filter' ? 'Trace 查询结果' : `工作流草稿 · ${preview.target}`}</div><pre style={styles.previewJson}>{JSON.stringify(preview.changes, null, 2)}</pre>{preview.missing.length > 0 && <div style={styles.missing}>还缺少：{preview.missing.join('、')}</div>}<div style={styles.previewActions}><button type="button" onClick={() => setPreview(null)} style={styles.secondaryButton}>{preview.action === 'run_filter' ? '关闭' : '取消'}</button>{preview.action !== 'run_filter' && <button type="button" disabled={busy} onClick={confirmPreview} style={styles.primaryButton}>{preview.action === 'dataset_delete' ? '确认删除' : preview.action === 'experiment_start' ? '确认启动' : preview.action === 'skill_publish' ? '确认发布' : '确认写入'}</button>}</div></section>}
           </div>
 
           <footer style={styles.footer}>

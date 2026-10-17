@@ -7,7 +7,7 @@ import { buildCopilotPlan } from '@/lib/copilot/planner';
 import { isTraceDiagnosisRequest, runBoundedTraceDiagnosis } from '@/lib/copilot/react';
 import { createCopilotRun } from '@/lib/copilot/run-store';
 import { contextSchema, workflowInputSchema, type WorkflowPreview } from '@/lib/copilot/contracts';
-import { buildDatasetDeletePreview, buildExperimentStartPreview, buildSkillPublishPreview, buildEvaluatorPreview, confirmEvaluatorDraft } from '@/lib/copilot/workflows';
+import { buildDatasetDeletePreview, buildExperimentStartPreview, buildRunFilterPreview, buildSkillPublishPreview, buildEvaluatorPreview, confirmEvaluatorDraft } from '@/lib/copilot/workflows';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,6 +65,23 @@ export async function POST(request: Request) {
       workflowPreview = await buildExperimentStartPreview(loaded, workflowInputSchema.parse(body.input || {}));
     } else if (intent.action === 'skill_publish') {
       workflowPreview = await buildSkillPublishPreview(loaded, workflowInputSchema.parse(body.input || {}));
+    } else if (intent.action === 'run_filter') {
+      workflowPreview = await buildRunFilterPreview(loaded, workflowInputSchema.parse({
+        ...(body.input && typeof body.input === 'object' ? body.input : {}),
+        instructions: body.input?.instructions || message,
+      }));
+    }
+    if (intent.action === 'evaluator_draft' && workflowPreview && workflowResult) {
+      return NextResponse.json({
+        answer: `评估器草稿已创建：${workflowPreview.target}。你可以在评估器页面继续编辑。`,
+        route: { intent, pageType: context.pageType, objectType: context.objectType },
+        plan,
+        run,
+        preview: workflowPreview,
+        workflowResult,
+        sources: loaded.sources.map(source => ({ id: source.id, kind: source.kind, label: source.label, locator: source.locator, href: source.href })),
+        missing: loaded.missing,
+      });
     }
     const allSources = [...loaded.sources, ...rag.sources];
     const evidence = allSources.map(source => `SOURCE ${source.id} (${source.label}) [${source.locator}]\n${source.content}`).join('\n\n---\n\n');
@@ -77,6 +94,22 @@ export async function POST(request: Request) {
       [...loaded.missing, ...rag.missing].length ? `已知缺失：${[...loaded.missing, ...rag.missing].join('；')}` : '',
       evidence ? `证据块：\n${evidence}` : '当前没有页面证据。',
     ].filter(Boolean).join('\n\n');
+    if (intent.action === 'run_filter' && workflowPreview) {
+      const changes = workflowPreview.changes as { count?: number; matches?: Array<Record<string, unknown>> };
+      const matches = Array.isArray(changes.matches) ? changes.matches : [];
+      const summary = matches.length
+        ? `Trace 查询完成，共找到 ${matches.length} 条匹配记录。\n\n${matches.map((match, index) => `${index + 1}. ${String(match.agent || match.framework || match.taskId || match.executionId || '未命名 Trace')} · ${String(match.status || '未知状态')}`).join('\n')}`
+        : 'Trace 查询完成，没有找到匹配记录。';
+      return NextResponse.json({
+        answer: summary,
+        route: { intent, pageType: context.pageType, objectType: context.objectType },
+        plan,
+        run,
+        preview: workflowPreview,
+        sources: [],
+        missing: [],
+      });
+    }
     const answer = await completeCopilot(user, system, message, images, undefined, modelConfigId);
     return NextResponse.json({
       answer,
