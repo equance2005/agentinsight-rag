@@ -47,3 +47,9 @@ test('copilot routes Skill modification requests to the Skill workflow', () => {
   assert.equal(route.intent, 'workflow_draft');
   assert.equal(route.action, 'skill_edit');
 });
+
+test('copilot keeps the dataset page context when no dataset card is selected', () => {
+  const route = classifyIntent('删除messages 日志分析（内置示例）这个数据集', true);
+  assert.equal(route.intent, 'workflow_draft');
+  assert.equal(route.action, 'dataset_delete');
+});

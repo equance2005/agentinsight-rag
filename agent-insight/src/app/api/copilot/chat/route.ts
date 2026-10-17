@@ -103,6 +103,17 @@ export async function POST(request: Request) {
         missing: loaded.missing,
       });
     }
+    if (intent.action === 'dataset_delete' && workflowPreview) {
+      return NextResponse.json({
+        answer: `已找到「${workflowPreview.target}」，下面是删除预览。请确认后才会删除。`,
+        route: { intent, pageType: context.pageType, objectType: context.objectType },
+        plan,
+        run,
+        preview: workflowPreview,
+        sources: loaded.sources.map(source => ({ id: source.id, kind: source.kind, label: source.label, locator: source.locator, href: source.href, excerpt: source.content })),
+        missing: loaded.missing,
+      });
+    }
     const allSources = [...loaded.sources, ...rag.sources];
     const evidence = allSources.map(source => `SOURCE ${source.id} (${source.label}) [${source.locator}]\n${source.content}`).join('\n\n---\n\n');
     const system = [

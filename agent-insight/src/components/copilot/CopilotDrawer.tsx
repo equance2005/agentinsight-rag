@@ -183,6 +183,12 @@ export default function CopilotDrawer() {
     requestRef.current?.abort();
   }, [pathname]);
 
+  useEffect(() => {
+    if (pathname === '/dataset' && context.pageType !== 'dataset') {
+      setContext({ pageType: 'dataset', objectType: 'unknown' });
+    }
+  }, [context.pageType, pathname]);
+
   useEffect(() => () => requestRef.current?.abort(), []);
 
   useEffect(() => {
@@ -392,8 +398,8 @@ export default function CopilotDrawer() {
     try {
       const response = await fetch('/api/copilot/workflows/preview', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, context, input }),
+        headers: { 'Content-Type': 'application/json', ...(apiKey ? { 'x-witty-api-key': apiKey } : {}) },
+        body: JSON.stringify({ action, context, input, user }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(String(payload.error || '无法生成工作流草稿'));
@@ -401,8 +407,8 @@ export default function CopilotDrawer() {
       if (action === 'evaluator_draft' && nextPreview) {
         const confirmResponse = await fetch('/api/copilot/workflows/confirm', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action, confirmationToken: nextPreview.confirmationToken, input: {} }),
+          headers: { 'Content-Type': 'application/json', ...(apiKey ? { 'x-witty-api-key': apiKey } : {}) },
+          body: JSON.stringify({ action, confirmationToken: nextPreview.confirmationToken, input: {}, user }),
         });
         const confirmPayload = await confirmResponse.json().catch(() => ({}));
         if (!confirmResponse.ok) throw new Error(String(confirmPayload.error || '评估器草稿创建失败'));
@@ -425,8 +431,8 @@ export default function CopilotDrawer() {
     try {
       const response = await fetch('/api/copilot/workflows/confirm', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: preview.action, confirmationToken: preview.confirmationToken, input: {} }),
+        headers: { 'Content-Type': 'application/json', ...(apiKey ? { 'x-witty-api-key': apiKey } : {}) },
+        body: JSON.stringify({ action: preview.action, confirmationToken: preview.confirmationToken, input: {}, user }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(String(payload.error || '确认执行失败'));
