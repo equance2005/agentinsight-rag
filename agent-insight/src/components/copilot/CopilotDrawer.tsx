@@ -276,6 +276,11 @@ export default function CopilotDrawer() {
       if (!response.ok) throw new Error(String(payload.error || 'Copilot 请求失败'));
       setMessages(current => [...current, { role: 'assistant', content: String(payload.answer || '没有生成可用回答。') }]);
       setSources(Array.isArray(payload.sources) ? payload.sources : []);
+      if (payload.preview && !payload.workflowResult) setPreview(payload.preview as Preview);
+      if (payload.workflowResult) setPreview(null);
+      if (payload.workflowResult && payload.preview?.action === 'evaluator_draft') {
+        setMessages(current => [...current, { role: 'assistant', content: `评估器草稿已创建：${payload.preview.target}` }]);
+      }
       setPlan(payload.plan && Array.isArray(payload.plan.steps)
         ? payload.plan as CopilotPlan
         : payload.react && Array.isArray(payload.react.steps)

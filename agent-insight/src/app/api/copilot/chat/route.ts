@@ -6,6 +6,8 @@ import { searchRagKnowledge } from '@/lib/copilot/rag';
 import { buildCopilotPlan } from '@/lib/copilot/planner';
 import { isTraceDiagnosisRequest, runBoundedTraceDiagnosis } from '@/lib/copilot/react';
 import { createCopilotRun } from '@/lib/copilot/run-store';
+import { contextSchema, workflowInputSchema, type WorkflowPreview } from '@/lib/copilot/contracts';
+import { buildDatasetDeletePreview, buildExperimentStartPreview, buildSkillPublishPreview, buildEvaluatorPreview, confirmEvaluatorDraft } from '@/lib/copilot/workflows';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +31,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '图片总大小不能超过 10MB' }, { status: 413 });
     }
     const rawContext = body.context && typeof body.context === 'object' ? body.context : {};
-    const context: CopilotContextEnvelope = { ...rawContext, user };
+    const context: CopilotContextEnvelope = contextSchema.parse({ ...rawContext, user }) as CopilotContextEnvelope;
     if (isTraceDiagnosisRequest(message, context)) {
       const diagnosis = await runBoundedTraceDiagnosis({ user, message, context, images, modelConfigId });
       return NextResponse.json({
@@ -47,6 +49,23 @@ export async function POST(request: Request) {
     const intent = routeCopilotIntent(message, loaded);
     const plan = buildCopilotPlan(message, intent, loaded);
     const run = await createCopilotRun(user, plan);
+    let workflowPreview: WorkflowPreview | null = null;
+    let workflowResult: Record<string, unknown> | null = null;
+    if (intent.action === 'evaluator_draft') {
+      const input = workflowInputSchema.parse({
+        ...(body.input && typeof body.input === 'object' ? body.input : {}),
+        evaluatorName: body.evaluatorName || 'Copilot 评估器草稿',
+        instructions: body.instructions || message,
+      });
+      workflowPreview = buildEvaluatorPreview(loaded, input);
+      workflowResult = await confirmEvaluatorDraft(user, workflowPreview.confirmationToken);
+    } else if (intent.action === 'dataset_delete') {
+      workflowPreview = await buildDatasetDeletePreview(loaded, workflowInputSchema.parse(body.input || {}));
+    } else if (intent.action === 'experiment_start') {
+      workflowPreview = await buildExperimentStartPreview(loaded, workflowInputSchema.parse(body.input || {}));
+    } else if (intent.action === 'skill_publish') {
+      workflowPreview = await buildSkillPublishPreview(loaded, workflowInputSchema.parse(body.input || {}));
+    }
     const allSources = [...loaded.sources, ...rag.sources];
     const evidence = allSources.map(source => `SOURCE ${source.id} (${source.label}) [${source.locator}]\n${source.content}`).join('\n\n---\n\n');
     const system = [
@@ -64,6 +83,8 @@ export async function POST(request: Request) {
       route: { intent, pageType: context.pageType, objectType: context.objectType },
       plan,
       run,
+      ...(workflowPreview ? { preview: workflowPreview } : {}),
+      ...(workflowResult ? { workflowResult } : {}),
       sources: allSources.map(source => ({ id: source.id, kind: source.kind, label: source.label, locator: source.locator, href: source.href })),
       missing: [...loaded.missing, ...rag.missing],
     });
