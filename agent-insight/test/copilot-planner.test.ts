@@ -41,3 +41,18 @@ test('Copilot routes destructive and gated operations to confirmation workflows'
   assert.equal(publish.requiresConfirmation, true);
   assert.equal(publish.steps.at(-1)?.tool, 'publish_skill');
 });
+
+test('Copilot planner creates the cross-module lifecycle TodoList', () => {
+  const route = classifyIntent('把这条 Trace 走完整闭环并做回归实验', true);
+  const plan = buildCopilotPlan('把这条 Trace 走完整闭环并做回归实验', route, context);
+  assert.deepEqual(plan.steps.map(step => step.tool), [
+    'get_trace_context',
+    'create_dataset_case_preview',
+    'create_evaluator_draft',
+    'preview_experiment_start',
+    'analyze_experiment_result',
+    'create_skill_candidate',
+    'publish_and_regress_skill',
+  ]);
+  assert.equal(plan.requiresConfirmation, true);
+});
