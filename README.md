@@ -17,6 +17,37 @@ RAG 知识库引用检索
 Agent Insight 活动模型统一回答
 ```
 
+## 一键启动两个项目
+
+Windows + Ubuntu/WSL 环境下，推荐直接双击仓库根目录的 `start-all.cmd`。
+也可以在 PowerShell 中执行：
+
+```powershell
+.\start-all.ps1
+```
+
+也可以直接双击 `start-all.cmd`，它会自动调用上面的 PowerShell 脚本；如果直接双击
+`.ps1` 被记事本打开，请使用这个 `.cmd` 文件。
+
+脚本会分别打开两个 PowerShell 窗口：RAG 在 Windows/Node 中运行，Agent Insight 按下面的
+Ubuntu/WSL 步骤运行。脚本只会在对应项目缺少 `node_modules` 时安装依赖；需要强制重新同步依赖时使用：
+
+```powershell
+.\start-all.ps1 -Install
+```
+
+依赖已经安装后也可以明确跳过安装：
+
+```powershell
+.\start-all.ps1 -SkipInstall
+```
+
+如果 PowerShell 禁止执行脚本，可以显式绕过当前进程的策略：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start-all.ps1
+```
+
 ## 启动 RAG
 
 ```bash
@@ -77,7 +108,7 @@ npx prisma generate
 bash scripts/develop_start.sh
 ```
 
-Agent Insight：`http://127.0.0.1:3000`
+Agent Insight：`http://localhost:3000`
 
 ## 配置 Copilot 使用 RAG
 
