@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { resolveUser } from '@/lib/auth/auth';
 import { contextSchema, workflowInputSchema, type CopilotContextEnvelope } from '@/lib/copilot/contracts';
 import { loadCopilotContext } from '@/lib/copilot/context';
-import { buildDatasetDeletePreview, buildEvaluatorPreview, buildExperimentStartPreview, buildRunFilterPreview, buildSkillPublishPreview, buildTraceDatasetPreview } from '@/lib/copilot/workflows';
+import { buildDatasetCreatePreview, buildDatasetDeletePreview, buildEvaluatorPreview, buildExperimentStartPreview, buildRunFilterPreview, buildSkillPublishPreview, buildTraceDatasetPreview } from '@/lib/copilot/workflows';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +16,7 @@ export async function POST(request: Request) {
     const loaded = await loadCopilotContext(context);
     const input = workflowInputSchema.parse(body.input || {});
     if (action === 'trace_to_dataset') return NextResponse.json({ preview: buildTraceDatasetPreview(loaded, input) });
+    if (action === 'dataset_create') return NextResponse.json({ preview: await buildDatasetCreatePreview(loaded, input) });
     if (action === 'evaluator_draft') return NextResponse.json({ preview: buildEvaluatorPreview(loaded, input) });
     if (action === 'run_filter') return NextResponse.json({ preview: await buildRunFilterPreview(loaded, input) });
     if (action === 'dataset_delete') return NextResponse.json({ preview: await buildDatasetDeletePreview(loaded, input) });

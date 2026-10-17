@@ -7,7 +7,7 @@ import { buildCopilotPlan } from '@/lib/copilot/planner';
 import { isTraceDiagnosisRequest, runBoundedTraceDiagnosis } from '@/lib/copilot/react';
 import { createCopilotRun } from '@/lib/copilot/run-store';
 import { contextSchema, workflowInputSchema, type WorkflowPreview } from '@/lib/copilot/contracts';
-import { buildDatasetDeletePreview, buildExperimentStartPreview, buildRunFilterPreview, buildSkillPublishPreview, buildEvaluatorPreview, confirmEvaluatorDraft } from '@/lib/copilot/workflows';
+import { buildDatasetCreatePreview, buildDatasetDeletePreview, buildExperimentStartPreview, buildRunFilterPreview, buildSkillPublishPreview, buildEvaluatorPreview, confirmEvaluatorDraft } from '@/lib/copilot/workflows';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,6 +59,12 @@ export async function POST(request: Request) {
       });
       workflowPreview = buildEvaluatorPreview(loaded, input);
       workflowResult = await confirmEvaluatorDraft(user, workflowPreview.confirmationToken);
+    } else if (intent.action === 'dataset_create') {
+      workflowPreview = await buildDatasetCreatePreview(loaded, workflowInputSchema.parse({
+        ...(body.input && typeof body.input === 'object' ? body.input : {}),
+        datasetName: body.datasetName || body.input?.datasetName || undefined,
+        instructions: body.instructions || body.input?.instructions || message,
+      }));
     } else if (intent.action === 'dataset_delete') {
       workflowPreview = await buildDatasetDeletePreview(loaded, workflowInputSchema.parse(body.input || {}));
     } else if (intent.action === 'experiment_start') {

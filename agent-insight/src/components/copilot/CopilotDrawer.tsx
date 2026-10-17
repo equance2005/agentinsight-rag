@@ -47,7 +47,7 @@ type ModelOption = ModelConfig & {
 };
 type Preview = {
   previewId: string;
-  action: 'trace_to_dataset' | 'evaluator_draft' | 'run_filter' | 'dataset_delete' | 'experiment_start' | 'skill_publish';
+  action: 'trace_to_dataset' | 'dataset_create' | 'evaluator_draft' | 'run_filter' | 'dataset_delete' | 'experiment_start' | 'skill_publish';
   target: string;
   changes: Record<string, unknown>;
   sources: Source[];

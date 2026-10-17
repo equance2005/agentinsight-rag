@@ -1,5 +1,5 @@
 import { createHmac, randomUUID } from 'node:crypto';
-import { createAgentDatasetRecord, deleteAgentDataset, findAgentDataset, normalizeCase, updateAgentDatasetRecord, type AgentDatasetRecord, type DatasetField } from '@/server/agent_datasets_storage';
+import { createAgentDatasetRecord, deleteAgentDataset, findAgentDataset, normalizeCase, readUserAgentDatasets, updateAgentDatasetRecord, type AgentDatasetRecord, type DatasetField } from '@/server/agent_datasets_storage';
 import { readUserCustomEvaluators, writeUserCustomEvaluators } from '@/server/user_evaluators_storage';
 import { syncCustomEvaluatorRegisteredAgents } from '@/lib/engine/evaluation/custom-llm-evaluator';
 import { db } from '@/lib/storage/prisma';
@@ -62,6 +62,63 @@ export function buildTraceDatasetPreview(context: CopilotContextResult, input: W
     expiresAt: new Date(expiresAt).toISOString(),
     confirmationToken,
   };
+}
+
+export async function buildDatasetCreatePreview(context: CopilotContextResult, input: WorkflowInput): Promise<WorkflowPreview> {
+  const name = String(input.datasetName || '').trim() || 'Copilot 评测数据集';
+  const description = String(input.instructions || '').trim() || '由 Agent Insight Copilot 创建，可继续录入评测样例。';
+  const expiresAt = Date.now() + PREVIEW_TTL_MS;
+  const changes = {
+    dataset: {
+      name,
+      description,
+      datasetKind: 'ideal_output',
+      fields: [
+        { key: 'input', label: '输入', type: 'text' },
+        { key: 'reference_output', label: '预期输出', type: 'text' },
+      ],
+      caseCount: 0,
+    },
+  };
+  const previewId = randomUUID();
+  const confirmationToken = token({ previewId, user: context.envelope.user, action: 'dataset_create', expiresAt, changes });
+  return {
+    previewId,
+    action: 'dataset_create',
+    target: name,
+    changes,
+    sources: [],
+    missing: [],
+    expiresAt: new Date(expiresAt).toISOString(),
+    confirmationToken,
+  };
+}
+
+export async function confirmDatasetCreate(user: string, previewToken: string): Promise<{ datasetId: string; inserted: boolean }> {
+  const payload = decode(previewToken);
+  if (payload.user !== user || payload.action !== 'dataset_create') throw new Error('确认令牌与当前用户或操作不匹配');
+  const dataset = (payload.changes as { dataset?: { name?: string; description?: string; datasetKind?: string; fields?: DatasetField[] } }).dataset;
+  const name = String(dataset?.name || '').trim();
+  if (!name) throw new Error('确认令牌缺少数据集名称');
+  const existing = (await readUserAgentDatasets(user)).find(item => item.name === name);
+  if (existing) return { datasetId: existing.id, inserted: false };
+  const now = new Date().toISOString();
+  const record: AgentDatasetRecord = {
+    id: randomUUID(),
+    user,
+    name,
+    description: String(dataset?.description || ''),
+    targetAgent: '',
+    targetSkill: '',
+    tags: ['copilot'],
+    fields: Array.isArray(dataset?.fields) ? dataset.fields : [],
+    cases: [],
+    datasetKind: dataset?.datasetKind === 'trajectory' || dataset?.datasetKind === 'reliability' ? dataset.datasetKind : 'ideal_output',
+    createdAt: now,
+    updatedAt: now,
+  };
+  await createAgentDatasetRecord(record);
+  return { datasetId: record.id, inserted: true };
 }
 
 export async function confirmTraceDataset(user: string, previewToken: string, input: WorkflowInput): Promise<{ datasetId: string; caseId: string; inserted: boolean }> {

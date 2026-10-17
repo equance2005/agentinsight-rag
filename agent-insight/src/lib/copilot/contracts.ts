@@ -18,7 +18,7 @@ export interface CopilotContextResult {
   facts: Record<string, unknown>;
   missing: string[];
 }
-export type WorkflowAction = 'trace_to_dataset' | 'evaluator_draft' | 'run_filter' | 'dataset_delete' | 'experiment_start' | 'skill_publish';
+export type WorkflowAction = 'trace_to_dataset' | 'dataset_create' | 'evaluator_draft' | 'run_filter' | 'dataset_delete' | 'experiment_start' | 'skill_publish';
 export type CopilotIntent = 'knowledge' | 'context_analysis' | 'how_to' | 'workflow_draft' | 'clarify';
 export interface CopilotRoute { intent: CopilotIntent; action?: WorkflowAction; reason: string }
 export type CopilotPlanStepKind = 'read' | 'write' | 'analyze';
@@ -83,6 +83,9 @@ export function classifyIntent(message: string, hasContext: boolean): CopilotRou
   if (lifecycle) return { intent: 'workflow_draft', reason: '创建跨模块 TodoList，按依赖逐步执行并在写操作前确认' };
   if ((traceQuery && !contextualObject) || filter) return { intent: 'workflow_draft', action: 'run_filter', reason: '使用 Trace 查询工具执行可回查的只读运行筛选' };
   if (command && sample && evaluator) return { intent: 'clarify', reason: '请先选择创建样例或起草评估器中的一个操作' };
+  if (command && /数据集|评测集|dataset/i.test(text) && !/当前|这条|这个|trace|链路/i.test(text)) {
+    return { intent: 'workflow_draft', action: 'dataset_create', reason: '创建数据集前展示字段和确认信息' };
+  }
   if (command && sample) return { intent: hasContext ? 'workflow_draft' : 'clarify', action: 'trace_to_dataset', reason: '先准备 Trace 样例草稿，确认后保存' };
   if (command && evaluator) return { intent: 'workflow_draft', action: 'evaluator_draft', reason: '准备可编辑的评估器草稿' };
   if (/当前|这条|这个|这次|此处|它|这里|诊断|失败|trace|dataset|skill|代码|模型|工具|评测结果|结果|总结|概括|分析|this|current/i.test(text)) {

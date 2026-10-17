@@ -36,6 +36,13 @@ export function buildCopilotPlan(message: string, route: CopilotRoute, context: 
       { title: '确认后写入数据集', tool: 'confirm_dataset_case', kind: 'write', dependsOn: ['2'], requiresConfirmation: true },
     ]);
   }
+  if (route.action === 'dataset_create') {
+    return plan('创建一个可编辑的评测数据集', [
+      { title: '读取当前用户的数据集能力和命名信息', tool: 'get_dataset_context', kind: 'read' },
+      { title: '生成数据集定义预览', tool: 'create_dataset_preview', kind: 'write', requiresConfirmation: true },
+      { title: '确认后创建数据集', tool: 'confirm_dataset_create', kind: 'write', dependsOn: ['2'], requiresConfirmation: true },
+    ]);
+  }
   if (route.action === 'evaluator_draft') {
     return plan('创建一个可编辑的评估器草稿', [
       { title: hasContext ? '读取当前对象和可用评估上下文' : '读取当前用户的评估配置', tool: 'get_evaluation_context', kind: 'read' },

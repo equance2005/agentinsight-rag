@@ -29,3 +29,9 @@ test('copilot routes Trace listing requests to the read-only Trace tool', () => 
   assert.equal(route.intent, 'workflow_draft');
   assert.equal(route.action, 'run_filter');
 });
+
+test('copilot routes blank dataset creation to the Dataset workflow', () => {
+  const route = classifyIntent('创建一个新的评测数据集', false);
+  assert.equal(route.intent, 'workflow_draft');
+  assert.equal(route.action, 'dataset_create');
+});
