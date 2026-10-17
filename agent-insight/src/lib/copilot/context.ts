@@ -127,7 +127,18 @@ async function datasetListContext(envelope: CopilotContextEnvelope): Promise<Cop
   return {
     envelope,
     sources: [source],
-    facts: { datasetCount: datasets.length, datasetIds: datasets.map(dataset => dataset.id) },
+    facts: {
+      datasetCount: datasets.length,
+      datasetIds: datasets.map(dataset => dataset.id),
+      datasets: datasets.slice(0, 30).map(dataset => ({
+        id: dataset.id,
+        name: dataset.name,
+        description: dataset.description,
+        datasetKind: dataset.datasetKind,
+        caseCount: dataset.caseCount,
+        fields: dataset.fields,
+      })),
+    },
     missing: datasets.length > 30 ? [`当前共有 ${datasets.length} 个数据集，仅展示前 30 个摘要`] : [],
   };
 }

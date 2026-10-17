@@ -6,7 +6,7 @@ import { searchRagKnowledge } from '@/lib/copilot/rag';
 import { buildCopilotPlan } from '@/lib/copilot/planner';
 import { isTraceDiagnosisRequest, runBoundedTraceDiagnosis } from '@/lib/copilot/react';
 import { createCopilotRun } from '@/lib/copilot/run-store';
-import { contextSchema, workflowInputSchema, type WorkflowPreview } from '@/lib/copilot/contracts';
+import { contextSchema, extractDatasetName, workflowInputSchema, type WorkflowPreview } from '@/lib/copilot/contracts';
 import { buildDatasetCreatePreview, buildDatasetDeletePreview, buildExperimentStartPreview, buildRunFilterPreview, buildSkillPublishPreview, buildEvaluatorPreview, confirmEvaluatorDraft } from '@/lib/copilot/workflows';
 
 export const dynamic = 'force-dynamic';
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     } else if (intent.action === 'dataset_create') {
       workflowPreview = await buildDatasetCreatePreview(loaded, workflowInputSchema.parse({
         ...(body.input && typeof body.input === 'object' ? body.input : {}),
-        datasetName: body.datasetName || body.input?.datasetName || undefined,
+        datasetName: body.datasetName || body.input?.datasetName || extractDatasetName(message),
         instructions: body.instructions || body.input?.instructions || message,
       }));
     } else if (intent.action === 'dataset_delete') {
@@ -85,6 +85,17 @@ export async function POST(request: Request) {
         run,
         preview: workflowPreview,
         workflowResult,
+        sources: loaded.sources.map(source => ({ id: source.id, kind: source.kind, label: source.label, locator: source.locator, href: source.href, excerpt: source.content })),
+        missing: loaded.missing,
+      });
+    }
+    if (intent.action === 'dataset_create' && workflowPreview) {
+      return NextResponse.json({
+        answer: `已根据当前数据集页面生成「${workflowPreview.target}」的创建预览，请确认后写入。`,
+        route: { intent, pageType: context.pageType, objectType: context.objectType },
+        plan,
+        run,
+        preview: workflowPreview,
         sources: loaded.sources.map(source => ({ id: source.id, kind: source.kind, label: source.label, locator: source.locator, href: source.href, excerpt: source.content })),
         missing: loaded.missing,
       });

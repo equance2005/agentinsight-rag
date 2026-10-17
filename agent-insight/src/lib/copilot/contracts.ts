@@ -61,6 +61,11 @@ export interface WorkflowPreview {
   expiresAt: string; confirmationToken: string;
 }
 
+export function extractDatasetName(message: string): string | undefined {
+  const match = message.match(/(?:名称\s*(?:叫|为|是)?|命名为|名为|叫)\s*[「“"'`]?\s*([^」”"'`\s，。！？!?]+)/i);
+  return match?.[1]?.trim() || undefined;
+}
+
 export function classifyIntent(message: string, hasContext: boolean): CopilotRoute {
   const text = message.trim();
   const howTo = /如何|怎么(?:样)?|怎样|是否|能否|可以.*[吗么]|how (?:to|do|can)|what is/i.test(text);

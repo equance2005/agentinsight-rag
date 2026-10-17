@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyIntent } from '@/lib/copilot/contracts';
+import { classifyIntent, extractDatasetName } from '@/lib/copilot/contracts';
 
 test('copilot routes method consultation away from write workflows', () => {
   const route = classifyIntent('如何基于当前 Trace 创建评测样例？', true);
@@ -34,6 +34,11 @@ test('copilot routes blank dataset creation to the Dataset workflow', () => {
   const route = classifyIntent('创建一个新的评测数据集', false);
   assert.equal(route.intent, 'workflow_draft');
   assert.equal(route.action, 'dataset_create');
+});
+
+test('copilot extracts a requested dataset name for the creation tool', () => {
+  assert.equal(extractDatasetName('名称叫test，先建空集'), 'test');
+  assert.equal(extractDatasetName('命名为「安全日志集」'), '安全日志集');
 });
 
 test('copilot routes Skill modification requests to the Skill workflow', () => {

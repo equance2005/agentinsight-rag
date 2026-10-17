@@ -66,18 +66,37 @@ export function buildTraceDatasetPreview(context: CopilotContextResult, input: W
 
 export async function buildDatasetCreatePreview(context: CopilotContextResult, input: WorkflowInput): Promise<WorkflowPreview> {
   const name = String(input.datasetName || '').trim() || 'Copilot 评测数据集';
-  const description = String(input.instructions || '').trim() || '由 Agent Insight Copilot 创建，可继续录入评测样例。';
+  const instructions = String(input.instructions || '').trim();
+  const knownDatasets = Array.isArray((context.facts as { datasets?: unknown }).datasets)
+    ? (context.facts as { datasets: Array<{ id: string; name: string; description?: string; datasetKind?: string; caseCount?: number; fields?: DatasetField[] }> }).datasets
+    : [];
+  const template = knownDatasets.find(dataset => (
+    (instructions && instructions.includes(dataset.name))
+      || (/messages\s*日志分析|日志分析.*内置示例/i.test(instructions) && /messages\s*日志分析/i.test(dataset.name))
+  ));
+  const fields = template?.fields?.length
+    ? template.fields.map(field => ({ ...field }))
+    : [
+        { key: 'input', label: '输入', type: 'text' },
+        { key: 'reference_output', label: '预期输出', type: 'text' },
+      ];
+  const description = template
+    ? `参照「${template.name}」的字段结构创建空数据集，暂不复制 Case。`
+    : '由 Agent Insight Copilot 创建，可继续录入评测样例。';
   const expiresAt = Date.now() + PREVIEW_TTL_MS;
   const changes = {
     dataset: {
       name,
       description,
-      datasetKind: 'ideal_output',
-      fields: [
-        { key: 'input', label: '输入', type: 'text' },
-        { key: 'reference_output', label: '预期输出', type: 'text' },
-      ],
+      datasetKind: template?.datasetKind || 'ideal_output',
+      fields,
       caseCount: 0,
+      template: template ? {
+        id: template.id,
+        name: template.name,
+        caseCount: template.caseCount || 0,
+        description: template.description || '',
+      } : null,
     },
   };
   const previewId = randomUUID();
@@ -87,7 +106,9 @@ export async function buildDatasetCreatePreview(context: CopilotContextResult, i
     action: 'dataset_create',
     target: name,
     changes,
-    sources: [],
+    sources: template
+      ? context.sources.filter(source => source.kind === 'dataset-list').map(({ content: _content, ...source }) => source)
+      : [],
     missing: [],
     expiresAt: new Date(expiresAt).toISOString(),
     confirmationToken,
