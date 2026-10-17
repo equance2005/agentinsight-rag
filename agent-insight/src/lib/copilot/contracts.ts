@@ -18,7 +18,7 @@ export interface CopilotContextResult {
   facts: Record<string, unknown>;
   missing: string[];
 }
-export type WorkflowAction = 'trace_to_dataset' | 'dataset_create' | 'evaluator_draft' | 'run_filter' | 'dataset_delete' | 'experiment_start' | 'skill_edit' | 'skill_publish';
+export type WorkflowAction = 'trace_to_dataset' | 'dataset_create' | 'evaluator_draft' | 'evaluator_delete' | 'run_filter' | 'dataset_delete' | 'experiment_start' | 'skill_edit' | 'skill_publish';
 export type CopilotIntent = 'knowledge' | 'context_analysis' | 'how_to' | 'workflow_draft' | 'clarify';
 export interface CopilotRoute { intent: CopilotIntent; action?: WorkflowAction; reason: string }
 export type CopilotPlanStepKind = 'read' | 'write' | 'analyze';
@@ -70,12 +70,22 @@ export function extractDatasetName(message: string): string | undefined {
   return name;
 }
 
+export function extractEvaluatorName(message: string): string | undefined {
+  const explicit = message.match(/(?:名称\s*(?:叫|为|是)?|命名为|名为|叫)\s*[「“"'`]?\s*([^」”"'`\s，。！？!?]+)/i);
+  if (explicit?.[1]?.trim()) return explicit[1].trim();
+  const deletion = message.match(/(?:删除|delete)\s*[「“"'`]?\s*(.+?)\s*[」”"'`]?\s*(?:这个|该|the)?\s*(?:评估器|评测器|evaluator)(?:[。.!！?？]|$)/i);
+  const name = deletion?.[1]?.trim();
+  if (!name || /^(?:这个|该|the)$/i.test(name)) return undefined;
+  return name;
+}
+
 export function classifyIntent(message: string, hasContext: boolean): CopilotRoute {
   const text = message.trim();
   const howTo = /如何|怎么(?:样)?|怎样|是否|能否|可以.*[吗么]|how (?:to|do|can)|what is/i.test(text);
   const sample = /(?:样例|样本|sample|example|评测集|数据集|dataset)/i.test(text);
   const evaluator = /evaluator|评估器|评测器/i.test(text);
   const deleteDataset = /(?:删除|delete).*(?:数据集|评测集|dataset)/i.test(text);
+  const deleteEvaluator = /(?:删除|delete).*(?:评估器|评测器|evaluator)/i.test(text);
   const startExperiment = /(?:启动|运行|开始|start|run).*(?:实验|评测|experiment)/i.test(text);
   const publishSkill = /(?:发布|publish).*(?:skill|技能)/i.test(text);
   const lifecycle = /(?:全流程|闭环|回归实验|端到端|end.?to.?end|regression)/i.test(text);
@@ -87,6 +97,7 @@ export function classifyIntent(message: string, hasContext: boolean): CopilotRou
   if (howTo) return { intent: 'how_to', reason: '方法咨询，只解释操作步骤' };
   if (negated) return { intent: hasContext ? 'context_analysis' : 'knowledge', reason: '用户没有授权工作流操作' };
   if (deleteDataset) return { intent: 'workflow_draft', action: 'dataset_delete', reason: '删除数据集属于破坏性操作，必须预览并确认' };
+  if (deleteEvaluator) return { intent: 'workflow_draft', action: 'evaluator_delete', reason: '删除自定义评估器属于破坏性操作，必须预览并确认' };
   if (startExperiment) return { intent: 'workflow_draft', action: 'experiment_start', reason: '启动实验前展示冻结配置并等待确认' };
   if (publishSkill) return { intent: 'workflow_draft', action: 'skill_publish', reason: '发布 Skill 前必须通过质量门禁并等待确认' };
   if (/(?:修改|优化|调整|编辑|生成|创建|update|edit|improve|change).*(?:skill|技能)/i.test(text)) {

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { resolveUser } from '@/lib/auth/auth';
 import { workflowInputSchema } from '@/lib/copilot/contracts';
-import { confirmDatasetCreate, confirmDatasetDelete, confirmEvaluatorDraft, confirmExperimentStart, confirmSkillPublish, confirmTraceDataset } from '@/lib/copilot/workflows';
+import { confirmDatasetCreate, confirmDatasetDelete, confirmEvaluatorDelete, confirmEvaluatorDraft, confirmExperimentStart, confirmSkillPublish, confirmTraceDataset } from '@/lib/copilot/workflows';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +18,8 @@ export async function POST(request: Request) {
     }
     const result = action === 'evaluator_draft'
       ? await confirmEvaluatorDraft(auth.username, confirmationToken)
+      : action === 'evaluator_delete'
+        ? await confirmEvaluatorDelete(auth.username, confirmationToken)
       : action === 'dataset_create'
         ? await confirmDatasetCreate(auth.username, confirmationToken)
       : action === 'dataset_delete'

@@ -6,8 +6,8 @@ import { searchRagKnowledge } from '@/lib/copilot/rag';
 import { buildCopilotPlan } from '@/lib/copilot/planner';
 import { isTraceDiagnosisRequest, runBoundedTraceDiagnosis } from '@/lib/copilot/react';
 import { createCopilotRun } from '@/lib/copilot/run-store';
-import { contextSchema, extractDatasetName, workflowInputSchema, type WorkflowPreview } from '@/lib/copilot/contracts';
-import { buildDatasetCreatePreview, buildDatasetDeletePreview, buildExperimentStartPreview, buildRunFilterPreview, buildSkillPublishPreview, buildEvaluatorPreview, confirmEvaluatorDraft } from '@/lib/copilot/workflows';
+import { contextSchema, extractDatasetName, extractEvaluatorName, workflowInputSchema, type WorkflowPreview } from '@/lib/copilot/contracts';
+import { buildDatasetCreatePreview, buildDatasetDeletePreview, buildEvaluatorDeletePreview, buildExperimentStartPreview, buildRunFilterPreview, buildSkillPublishPreview, buildEvaluatorPreview, confirmEvaluatorDraft } from '@/lib/copilot/workflows';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,6 +59,12 @@ export async function POST(request: Request) {
       });
       workflowPreview = buildEvaluatorPreview(loaded, input);
       workflowResult = await confirmEvaluatorDraft(user, workflowPreview.confirmationToken);
+    } else if (intent.action === 'evaluator_delete') {
+      workflowPreview = await buildEvaluatorDeletePreview(loaded, workflowInputSchema.parse({
+        ...(body.input && typeof body.input === 'object' ? body.input : {}),
+        evaluatorId: body.evaluatorId || body.input?.evaluatorId || undefined,
+        evaluatorName: body.evaluatorName || body.input?.evaluatorName || extractEvaluatorName(message),
+      }));
     } else if (intent.action === 'dataset_create') {
       workflowPreview = await buildDatasetCreatePreview(loaded, workflowInputSchema.parse({
         ...(body.input && typeof body.input === 'object' ? body.input : {}),
@@ -111,6 +117,17 @@ export async function POST(request: Request) {
         run,
         preview: workflowPreview,
         sources: loaded.sources.map(source => ({ id: source.id, kind: source.kind, label: source.label, locator: source.locator, href: source.href, excerpt: source.content })),
+        missing: loaded.missing,
+      });
+    }
+    if (intent.action === 'evaluator_delete' && workflowPreview) {
+      return NextResponse.json({
+        answer: `已找到自定义评估器「${workflowPreview.target}」，下面是删除预览。请确认后才会删除。`,
+        route: { intent, pageType: context.pageType, objectType: context.objectType },
+        plan,
+        run,
+        preview: workflowPreview,
+        sources: [],
         missing: loaded.missing,
       });
     }

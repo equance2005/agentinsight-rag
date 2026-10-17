@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyIntent, extractDatasetName } from '@/lib/copilot/contracts';
+import { classifyIntent, extractDatasetName, extractEvaluatorName } from '@/lib/copilot/contracts';
 
 test('copilot routes method consultation away from write workflows', () => {
   const route = classifyIntent('如何基于当前 Trace 创建评测样例？', true);
@@ -52,4 +52,9 @@ test('copilot keeps the dataset page context when no dataset card is selected', 
   const route = classifyIntent('删除messages 日志分析（内置示例）这个数据集', true);
   assert.equal(route.intent, 'workflow_draft');
   assert.equal(route.action, 'dataset_delete');
+});
+
+test('copilot routes custom evaluator deletion and extracts its name', () => {
+  assert.equal(classifyIntent('删除日志准确性评估器', true).action, 'evaluator_delete');
+  assert.equal(extractEvaluatorName('删除日志准确性评估器'), '日志准确性');
 });

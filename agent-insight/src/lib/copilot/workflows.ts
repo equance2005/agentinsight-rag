@@ -210,6 +210,57 @@ export async function confirmEvaluatorDraft(user: string, previewToken: string):
   return { evaluatorId: String(card.id), inserted: true };
 }
 
+export async function buildEvaluatorDeletePreview(context: CopilotContextResult, input: WorkflowInput): Promise<WorkflowPreview> {
+  const requestedId = String(input.evaluatorId || '').trim();
+  const requestedName = String(input.evaluatorName || '').trim();
+  const evaluators = await readUserCustomEvaluators(context.envelope.user) as Array<Record<string, unknown>>;
+  const matches = evaluators.filter(item => {
+    const id = String(item.id || '').trim();
+    const name = String(item.name || '').trim();
+    return requestedId ? id === requestedId : requestedName ? name === requestedName : false;
+  });
+  if (matches.length > 1) throw new Error(`找到多个匹配的自定义评估器，请使用 evaluatorId 指定目标`);
+  const evaluator = matches[0];
+  if (!evaluator) throw new Error(requestedName ? `未找到名为「${requestedName}」的自定义评估器` : '请先说明要删除的自定义评估器名称');
+  const expiresAt = Date.now() + PREVIEW_TTL_MS;
+  const changes = {
+    evaluatorId: String(evaluator.id || ''),
+    name: String(evaluator.name || ''),
+    evaluatorType: String(evaluator.evaluatorType || 'LLM'),
+    destructive: true,
+  };
+  const previewId = randomUUID();
+  const confirmationToken = token({ previewId, user: context.envelope.user, action: 'evaluator_delete', expiresAt, changes });
+  return {
+    previewId,
+    action: 'evaluator_delete',
+    target: String(evaluator.name || evaluator.id || '自定义评估器'),
+    changes,
+    sources: [{ id: String(evaluator.id || evaluator.name), kind: 'evaluator', label: `评估器 ${String(evaluator.name || '')}`, locator: `evaluator:${String(evaluator.id || '')}`, href: '/metrics' }],
+    missing: ['删除自定义评估器后不可恢复，请确认后继续'],
+    expiresAt: new Date(expiresAt).toISOString(),
+    confirmationToken,
+  };
+}
+
+export async function confirmEvaluatorDelete(user: string, previewToken: string): Promise<{ evaluatorId: string; deleted: boolean }> {
+  const payload = decode(previewToken);
+  if (payload.user !== user || payload.action !== 'evaluator_delete') throw new Error('确认令牌与当前用户或操作不匹配');
+  const changes = payload.changes as { evaluatorId?: string; name?: string };
+  const evaluatorId = String(changes.evaluatorId || '').trim();
+  const name = String(changes.name || '').trim();
+  const existing = await readUserCustomEvaluators(user) as Array<Record<string, unknown>>;
+  const remaining = existing.filter(item => {
+    const sameId = evaluatorId && String(item.id || '').trim() === evaluatorId;
+    const sameName = !evaluatorId && name && String(item.name || '').trim() === name;
+    return !sameId && !sameName;
+  });
+  if (remaining.length === existing.length) return { evaluatorId: evaluatorId || name, deleted: false };
+  await writeUserCustomEvaluators(user, remaining);
+  await syncCustomEvaluatorRegisteredAgents(user, remaining as any);
+  return { evaluatorId: evaluatorId || name, deleted: true };
+}
+
 export async function buildRunFilterPreview(context: CopilotContextResult, input: WorkflowInput): Promise<WorkflowPreview> {
   const query = String(input.instructions || '').trim();
   if (!query) throw new Error('请提供 Trace 查询条件');

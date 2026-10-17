@@ -47,7 +47,7 @@ type ModelOption = ModelConfig & {
 };
 type Preview = {
   previewId: string;
-  action: 'trace_to_dataset' | 'dataset_create' | 'evaluator_draft' | 'run_filter' | 'dataset_delete' | 'experiment_start' | 'skill_publish';
+  action: 'trace_to_dataset' | 'dataset_create' | 'evaluator_draft' | 'evaluator_delete' | 'run_filter' | 'dataset_delete' | 'experiment_start' | 'skill_publish';
   target: string;
   changes: Record<string, unknown>;
   sources: Source[];
@@ -510,7 +510,7 @@ export default function CopilotDrawer() {
                 {showTraceSteps && traceSteps.map(source => <div key={source.id} style={styles.traceStep}><a href={source.href || '#'} style={styles.source} title="打开当前 Trace"><FileText size={14} /><span>{source.label}</span><span style={styles.sourceLocator}>{source.locator}</span></a>{source.excerpt && <div style={styles.traceStepExcerpt}>{formatSourceExcerpt(source.excerpt)}</div>}</div>)}
               </section>;
             })()}
-            {preview && <section style={styles.preview}><div style={styles.sectionLabel}>{preview.action === 'run_filter' ? 'Trace 查询结果' : `工作流草稿 · ${preview.target}`}</div><pre style={styles.previewJson}>{JSON.stringify(preview.changes, null, 2)}</pre>{preview.missing.length > 0 && <div style={styles.missing}>还缺少：{preview.missing.join('、')}</div>}<div style={styles.previewActions}><button type="button" onClick={() => setPreview(null)} style={styles.secondaryButton}>{preview.action === 'run_filter' ? '关闭' : '取消'}</button>{preview.action !== 'run_filter' && <button type="button" disabled={busy} onClick={confirmPreview} style={styles.primaryButton}>{preview.action === 'dataset_delete' ? '确认删除' : preview.action === 'experiment_start' ? '确认启动' : preview.action === 'skill_publish' ? '确认发布' : '确认写入'}</button>}</div></section>}
+            {preview && <section style={styles.preview}><div style={styles.sectionLabel}>{preview.action === 'run_filter' ? 'Trace 查询结果' : `工作流草稿 · ${preview.target}`}</div><pre style={styles.previewJson}>{JSON.stringify(preview.changes, null, 2)}</pre>{preview.missing.length > 0 && <div style={styles.missing}>还缺少：{preview.missing.join('、')}</div>}<div style={styles.previewActions}><button type="button" onClick={() => setPreview(null)} style={styles.secondaryButton}>{preview.action === 'run_filter' ? '关闭' : '取消'}</button>{preview.action !== 'run_filter' && <button type="button" disabled={busy} onClick={confirmPreview} style={styles.primaryButton}>{preview.action === 'dataset_delete' || preview.action === 'evaluator_delete' ? '确认删除' : preview.action === 'experiment_start' ? '确认启动' : preview.action === 'skill_publish' ? '确认发布' : '确认写入'}</button>}</div></section>}
           </div>
 
           <footer style={styles.footer}>

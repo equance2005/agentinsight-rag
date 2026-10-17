@@ -49,6 +49,13 @@ export function buildCopilotPlan(message: string, route: CopilotRoute, context: 
       { title: '生成并保存评估器草稿', tool: 'create_evaluator_draft', kind: 'write', dependsOn: ['1'] },
     ]);
   }
+  if (route.action === 'evaluator_delete') {
+    return plan('删除当前用户的自定义评估器', [
+      { title: '读取评估器名称、类型和当前配置', tool: 'get_evaluator_context', kind: 'read' },
+      { title: '展示删除影响和确认提示', tool: 'preview_evaluator_delete', kind: 'write', dependsOn: ['1'], requiresConfirmation: true },
+      { title: '确认后删除自定义评估器', tool: 'delete_evaluator', kind: 'write', dependsOn: ['2'], requiresConfirmation: true },
+    ]);
+  }
   if (route.action === 'run_filter') {
     return plan('使用 Trace 查询工具按条件查找运行记录', [
       { title: '读取当前用户的运行记录', tool: 'list_executions', kind: 'read' },
