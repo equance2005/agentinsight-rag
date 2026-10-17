@@ -250,9 +250,9 @@ export class Ingestor {
         const hashes = [...uniqueByHash.keys()];
         const texts = hashes.map((hash) => uniqueByHash.get(hash) as string);
 
-        // 分批调用。默认 16 是因为部分服务端（如阿里云百炼）限制单次 input 不超过 20 条；
+        // 分批调用。百炼兼容接口限制单次 input 不超过 10 条；
         // 批次过大会直接返回 InvalidParameter 而整批失败。
-        const vectors = await this.embedInBatches(input.embedder, texts, 16);
+        const vectors = await this.embedInBatches(input.embedder, texts, 10);
         hashes.forEach((hash, index) => embeddingByHash.set(hash, vectors[index]));
 
         input.stats.embeddingsComputed += texts.length;
@@ -383,7 +383,7 @@ export class Ingestor {
   /**
    * 分批调用 embedding，保证顺序与输入一致。
    *
-   * 批大小需要保守：阿里云百炼限制单次 input ≤ 20 条，OpenAI 限制更大但没必要冒险。
+   * 批大小需要保守：阿里云百炼限制单次 input ≤ 10 条，OpenAI 限制更大但没必要冒险。
    * 批次失败会带上批内首条文本的前缀，便于定位是内容问题还是配额问题。
    */
   private async embedInBatches(
@@ -456,7 +456,7 @@ export class Ingestor {
     const vectors = await this.embedInBatches(
       embedder,
       hashes.map((hash) => unique.get(hash) as string),
-      16,
+      10,
     );
     const byHash = new Map<string, Float32Array>();
     hashes.forEach((hash, index) => byHash.set(hash, vectors[index]));

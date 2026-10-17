@@ -563,6 +563,24 @@ async function main(): Promise<void> {
       record('安全', '上传需要 key 与合法来源，合法文件可摄取',
         missingKey.status === 401 && badOrigin.status === 403 && accepted.status === 200 && uploadResult.stats?.added === 1,
         `缺 key HTTP ${missingKey.status}，非法来源 HTTP ${badOrigin.status}，合法上传 HTTP ${accepted.status}`);
+
+      const listed = await api(url, guarded.id, guarded.publicKey!, '/documents', {
+        headers: { origin: 'https://allowed.test' },
+      });
+      const uploadedDocument = listed.body.documents?.find((document: { title?: string }) => document.title === 'upload.md');
+      const deleted = uploadedDocument
+        ? await api(url, guarded.id, guarded.publicKey!, `/documents/${uploadedDocument.id}`, {
+            method: 'DELETE', headers: { origin: 'https://allowed.test' },
+          })
+        : { status: 0, ok: false, body: {} };
+      const listedAfterDelete = await api(url, guarded.id, guarded.publicKey!, '/documents', {
+        headers: { origin: 'https://allowed.test' },
+      });
+      record('安全', '管理台可列出并删除文档，且校验知识库归属',
+        listed.status === 200 && uploadedDocument !== undefined && deleted.status === 200 &&
+          listedAfterDelete.status === 200 &&
+          !listedAfterDelete.body.documents?.some((document: { id?: string }) => document.id === uploadedDocument.id),
+        `列表 HTTP ${listed.status}，删除 HTTP ${deleted.status}，删除后列表 HTTP ${listedAfterDelete.status}`);
     }
 
     // =====================================================================

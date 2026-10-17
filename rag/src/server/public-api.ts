@@ -4,8 +4,8 @@
  * 这些是插件与外部系统唯一依赖的接口：只涉及知识库自身资源，
  * 不出现任何宿主专有概念（Trace / Run / Execution / Skill）。
  *
- * 鉴权：站点级 public key + 域名白名单。public key 只能访问只读与问答接口，
- * 不能触碰管理、摄取与维护者路由。
+ * 鉴权：站点级 public key + 域名白名单。公开问答、管理台文档摄取与文档维护
+ * 共用这套校验；更广泛的知识库和维护者操作仍不在公开契约中。
  */
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -533,6 +533,54 @@ export function registerPublicRoutes(server: KbServer): void {
     const auth = authorizePublic(ctx.engine, req, url, params.kbId);
     if (!auth.ok) return server.json(res, auth.status, { error: auth.error });
     return handleUploadRoute(server, req, res, params.kbId, ctx);
+  });
+
+  // -------------------------------------------------------------------------
+  // 文档管理（管理台使用；仍沿用知识库 public key 与来源白名单）
+  // -------------------------------------------------------------------------
+
+  server.route('GET', '/api/public/kb/:kbId/documents', async (req, res, params, ctx) => {
+    const url = new URL(req.url ?? '/', 'http://localhost');
+    const auth = authorizePublic(ctx.engine, req, url, params.kbId);
+    if (!auth.ok) return server.json(res, auth.status, { error: auth.error });
+
+    const resolved = resolveKb(ctx.engine, params.kbId);
+    if (!resolved.ok) return server.json(res, resolved.status, { error: resolved.error });
+
+    // 不返回 sourcePath：本地导入时它可能包含服务端绝对路径。
+    const documents = ctx.engine.listDocuments(resolved.kb.id).map((document) => ({
+      id: document.id,
+      title: document.title,
+      mimeType: document.mimeType,
+      sizeBytes: document.sizeBytes,
+      parseStatus: document.parseStatus,
+      parseError: document.parseError,
+      parseWarnings: document.parseWarnings,
+      chunkCount: document.chunkCount,
+      updatedAt: document.updatedAt,
+    }));
+
+    return server.json(res, 200, { documents });
+  });
+
+  server.route('DELETE', '/api/public/kb/:kbId/documents/:documentId', async (req, res, params, ctx) => {
+    const url = new URL(req.url ?? '/', 'http://localhost');
+    const auth = authorizePublic(ctx.engine, req, url, params.kbId);
+    if (!auth.ok) return server.json(res, auth.status, { error: auth.error });
+
+    const resolved = resolveKb(ctx.engine, params.kbId);
+    if (!resolved.ok) return server.json(res, resolved.status, { error: resolved.error });
+
+    const document = ctx.engine.getDocument(params.documentId);
+    if (!document || document.kbId !== resolved.kb.id) {
+      return server.json(res, 404, { error: '文档不存在' });
+    }
+
+    if (!ctx.engine.deleteDocument(document.id)) {
+      return server.json(res, 404, { error: '文档不存在' });
+    }
+
+    return server.json(res, 200, { ok: true, documentId: document.id });
   });
 }
 

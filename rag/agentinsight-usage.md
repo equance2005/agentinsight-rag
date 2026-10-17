@@ -152,7 +152,7 @@ npm run cli -- show main
 
 公开 key 可以访问公开问答和上传接口，但不能代替管理端权限，也不能直接执行 Agent Insight 数据写入。
 
-由于当前公开上传接口使用同一个 `public key` 鉴权，浏览器页面中的 key 不应被当作管理员密钥使用。若普通访客不应上传文档，请把上传动作放在受控后台或内部网络中，并通过域名白名单、反向代理或服务端权限再次限制。
+由于当前公开上传、列表和删除接口使用同一个 `public key` 鉴权，浏览器页面中的 key 不应被当作管理员密钥使用。若普通访客不应管理文档，请把管理台放在受控后台或内部网络中，并通过域名白名单、反向代理或服务端权限再次限制。
 
 ## 5. 导入知识文档
 
@@ -253,6 +253,8 @@ curl.exe -X POST `
 | `GET` | `/api/public/kb/widget.js` | 获取网页插件 |
 | `GET` | `/api/public/kb/:kbId/config` | 获取插件配置 |
 | `POST` | `/api/public/kb/:kbId/upload` | 上传和导入文档 |
+| `GET` | `/api/public/kb/:kbId/documents` | 查看文档列表与解析状态（管理台） |
+| `DELETE` | `/api/public/kb/:kbId/documents/:documentId` | 删除文档及其检索向量（管理台） |
 | `POST` | `/api/public/kb/:kbId/chat` | 非流式问答 |
 | `GET` | `/api/public/kb/:kbId/chat/stream` | SSE 流式问答 |
 | `GET` | `/api/public/kb/:kbId/chunks/:chunkId` | 查看引用原文和定位 |

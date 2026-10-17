@@ -11,6 +11,21 @@ import { KnowledgeBaseRepository } from '../store/repository.js';
 import { KeywordRetriever } from './keyword.js';
 import { normalizeFusedScores, rankToList, reciprocalRankFusion, type RankedList } from './fusion.js';
 
+/**
+ * Remove common Chinese question framing before the lexical query is built.
+ * The original query is still sent to the semantic channel and the answer
+ * gates, so this only prevents FTS from spending its limited term budget on
+ * words such as "在哪里" and "分别是什么".
+ */
+export function rewriteQueryForRetrieval(query: string): string {
+  return query
+    .toLowerCase()
+    .replace(/在哪里|何处|是什么|是多少|多少|多久|如何|怎么|怎样|哪个|哪些|是否|应该|需要|能否|可以|存放|存储|位置|路径|期限|多长|时间|要求|条件|材料|准备|流程|方案|方式|限制|内容|分别|周期|策略/g, ' ')
+    .replace(/[？?。！!，,、；;：:""''（）()【】\[\]]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export interface RetrieveOptions {
   kbId: string;
   query: string;
@@ -40,10 +55,11 @@ export class Retriever {
   async retrieve(options: RetrieveOptions): Promise<RetrievalResult> {
     const startedAt = Date.now();
     const candidateK = options.candidateK ?? Math.max(options.topK * 4, 20);
+    const keywordQuery = rewriteQueryForRetrieval(options.query);
     // --- 关键词通道 ---
     const keywordHits = this.keyword.search({
       kbId: options.kbId,
-      query: options.query,
+      query: keywordQuery || options.query,
       topK: candidateK,
       documentIds: options.documentIds,
     });
@@ -129,7 +145,7 @@ export class Retriever {
       topScore: hits.length > 0 ? hits[0].score : 0,
       semanticDegraded,
       semanticDegradeReason: degradeReason,
-      queryRewrite: null,
+      queryRewrite: keywordQuery && keywordQuery !== options.query ? keywordQuery : null,
       elapsedMs: Date.now() - startedAt,
     };
   }

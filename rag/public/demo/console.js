@@ -30,7 +30,7 @@ function loadConfig() {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
     if (saved.kbId) $('kbId').value = saved.kbId;
     if (saved.apiKey) $('apiKey').value = saved.apiKey;
-    if (saved.kbId && saved.apiKey) setConfigStatus('已从本机恢复配置，点击「加载配置」验证。', 'warn');
+    if (saved.kbId && saved.apiKey) setConfigStatus('已恢复本机配置，正在自动验证。', 'warn');
   } catch {
     // 忽略损坏的本地配置
   }
@@ -78,6 +78,11 @@ async function connect() {
 
     if (!response.ok) {
       setConfigStatus(`连接失败：${payload.error || response.status}`, 'err');
+      state.connected = false;
+      state.kbName = '';
+      updateUploadHint();
+      updateAskHint();
+      resetDocumentsView();
       return;
     }
 
@@ -87,11 +92,13 @@ async function connect() {
     renderSnippet();
     updateUploadHint();
     updateAskHint();
+    await loadDocuments();
   } catch (error) {
     setConfigStatus(`连接失败：${error.message}`, 'err');
     state.connected = false;
     updateUploadHint();
     updateAskHint();
+    resetDocumentsView();
   }
 }
 
@@ -190,13 +197,118 @@ async function upload() {
           .join('\n\n') +
         '</pre>';
     }
+    await loadDocuments();
   } catch (error) {
     setStatus('uploadStatus', `上传失败：${error.message}`, 'err');
   }
 }
 
 // ---------------------------------------------------------------------------
-// 3. 问答
+// 3. 文档管理
+// ---------------------------------------------------------------------------
+
+const documentStatusLabels = {
+  pending: ['处理中', 'warn'],
+  ok: ['已就绪', 'ok'],
+  error: ['解析失败', 'err'],
+  skipped: ['已跳过', 'warn'],
+};
+
+function resetDocumentsView() {
+  $('documentsStatus').textContent = '请先连接知识库。';
+  $('documentsStatus').className = 'status';
+  $('documentsList').innerHTML = '<div class="status" style="padding:12px">请先在上方连接知识库。</div>';
+  $('btnRefreshDocuments').disabled = true;
+}
+
+function formatBytes(bytes) {
+  const value = Number(bytes) || 0;
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+  return `${(value / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function renderDocuments(documents) {
+  if (!documents.length) {
+    $('documentsList').innerHTML = '<div class="status" style="padding:12px">当前知识库暂无文档。</div>';
+    return;
+  }
+
+  $('documentsList').innerHTML = documents.map((document) => {
+    const [statusLabel, statusClass] = documentStatusLabels[document.parseStatus] || ['未知状态', 'warn'];
+    const detail = document.parseStatus === 'error' && document.parseError
+      ? ` title="${escapeHtml(document.parseError)}"`
+      : '';
+    return `<div class="document-row">
+      <div class="document-title" title="${escapeHtml(document.title)}">${escapeHtml(document.title)}</div>
+      <div class="document-meta">${formatBytes(document.sizeBytes)} · ${document.chunkCount || 0} 个片段</div>
+      <div class="document-status ${statusClass}"${detail}>${statusLabel}</div>
+      <button class="danger" aria-label="删除文档 ${escapeHtml(document.title)}" data-document-id="${escapeHtml(document.id)}" data-document-title="${escapeHtml(document.title)}">删除</button>
+    </div>`;
+  }).join('');
+
+  for (const button of $('documentsList').querySelectorAll('[data-document-id]')) {
+    button.addEventListener('click', () => deleteDocument(button.dataset.documentId, button.dataset.documentTitle, button));
+  }
+}
+
+async function loadDocuments() {
+  const refreshButton = $('btnRefreshDocuments');
+  if (!state.connected || !state.kbId || !state.apiKey) {
+    resetDocumentsView();
+    return;
+  }
+
+  refreshButton.disabled = true;
+  setStatus('documentsStatus', '正在加载文档列表…');
+  try {
+    const response = await fetch(`/api/public/kb/${encodeURIComponent(state.kbId)}/documents`, {
+      headers: { 'x-kb-key': state.apiKey },
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setStatus('documentsStatus', `加载失败：${payload.error || response.status}`, 'err');
+      return;
+    }
+
+    const documents = Array.isArray(payload.documents) ? payload.documents : [];
+    renderDocuments(documents);
+    setStatus('documentsStatus', `共 ${documents.length} 个文档。`, 'ok');
+  } catch (error) {
+    setStatus('documentsStatus', `加载失败：${error.message}`, 'err');
+  } finally {
+    refreshButton.disabled = false;
+  }
+}
+
+async function deleteDocument(documentId, title, button) {
+  if (!documentId || !state.connected) return;
+  if (!window.confirm(`确定删除文档「${title || documentId}」吗？\n文档及其检索向量都会被移除。`)) return;
+
+  button.disabled = true;
+  setStatus('documentsStatus', `正在删除「${title || documentId}」…`);
+  try {
+    const response = await fetch(
+      `/api/public/kb/${encodeURIComponent(state.kbId)}/documents/${encodeURIComponent(documentId)}`,
+      { method: 'DELETE', headers: { 'x-kb-key': state.apiKey } },
+    );
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setStatus('documentsStatus', `删除失败：${payload.error || response.status}`, 'err');
+      button.disabled = false;
+      return;
+    }
+
+    setStatus('documentsStatus', `已删除「${title || documentId}」。`, 'ok');
+    await loadDocuments();
+  } catch (error) {
+    setStatus('documentsStatus', `删除失败：${error.message}`, 'err');
+    button.disabled = false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 4. 问答
 // ---------------------------------------------------------------------------
 
 function renderAskResult(result) {
@@ -552,9 +664,11 @@ $('btnClear').addEventListener('click', () => {
   setConfigStatus('已清除本机配置。', '');
   updateUploadHint();
   updateAskHint();
+  resetDocumentsView();
 });
 $('btnUpload').addEventListener('click', upload);
 $('files').addEventListener('change', updateUploadHint);
+$('btnRefreshDocuments').addEventListener('click', loadDocuments);
 $('btnAsk').addEventListener('click', () => ask(true));
 $('btnAskSync').addEventListener('click', () => ask(false));
 $('btnReset').addEventListener('click', () => {
@@ -573,3 +687,6 @@ if (params.get('key')) $('apiKey').value = params.get('key');
 loadConfig();
 updateUploadHint();
 updateAskHint();
+if ($('kbId').value.trim() && $('apiKey').value.trim()) {
+  connect();
+}

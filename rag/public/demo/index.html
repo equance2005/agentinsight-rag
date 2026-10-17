@@ -200,6 +200,17 @@
     .timing-panel { background: rgba(5,5,6,.38); border-color: rgba(255,255,255,.08); }
     .timing-chip { color: var(--fg); background: rgba(255,255,255,.045); border-color: rgba(255,255,255,.08); }
     .timing-track { background: rgba(255,255,255,.09); }
+    .document-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-top:16px; }
+    .document-list { margin-top:10px; border:1px solid rgba(255,255,255,.08); border-radius:10px; overflow:hidden; }
+    .document-row { display:grid; grid-template-columns:minmax(0, 1fr) auto auto auto; align-items:center; gap:12px; padding:11px 12px; border-bottom:1px solid rgba(255,255,255,.07); }
+    .document-row:last-child { border-bottom:0; }
+    .document-title { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .document-meta { color:var(--muted); font-size:12px; white-space:nowrap; }
+    .document-status { font-size:12px; white-space:nowrap; }
+    .document-status.ok { color:var(--ok); } .document-status.warn { color:var(--warn); } .document-status.err { color:var(--err); }
+    button.danger { color:var(--err); border-color:rgba(237,113,128,.35); }
+    button.danger:hover { color:#fff; background:rgba(180,45,65,.75); border-color:rgba(237,113,128,.65); }
+    @media (max-width: 700px) { .document-row { grid-template-columns:minmax(0, 1fr) auto; } .document-row .document-meta { grid-column:1; } }
     @media (max-width: 700px) { .row { flex-direction: column; } .timing-row { grid-template-columns: 130px 1fr 56px; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
   </style>
@@ -264,9 +275,22 @@
         <div id="uploadResult"></div>
       </section>
 
-      <!-- ========== 3. 问答验证 ========== -->
+      <!-- ========== 3. 文档管理 ========== -->
       <section class="panel full">
-        <h2>3. 问答验证</h2>
+        <h2>3. 文档管理</h2>
+        <p class="hint">查看当前知识库中的文档、解析状态和片段数量；删除后文档及其检索向量会立即移除。</p>
+        <div class="document-toolbar">
+          <div class="status" id="documentsStatus">请先连接知识库。</div>
+          <button id="btnRefreshDocuments" disabled>刷新文档列表</button>
+        </div>
+        <div class="document-list" id="documentsList">
+          <div class="status" style="padding:12px">请先在上方连接知识库。</div>
+        </div>
+      </section>
+
+      <!-- ========== 4. 问答验证 ========== -->
+      <section class="panel full">
+        <h2>4. 问答验证</h2>
         <p class="hint">
           直接调用公开接口（与插件走同一条链路），便于核对回答、引用与闸门裁决。
         </p>
@@ -302,9 +326,9 @@
         <div id="askResult"></div>
       </section>
 
-      <!-- ========== 4. 插件集成 ========== -->
+      <!-- ========== 5. 插件集成 ========== -->
       <section class="panel full">
-        <h2>4. 插件集成</h2>
+        <h2>5. 插件集成</h2>
         <p class="hint">
           同一份 <code>kb-widget.js</code> 在两类宿主中复用：
           本页（宿主运行模式）与
@@ -327,9 +351,9 @@
         <div class="status" id="widgetStatus"></div>
       </section>
 
-      <!-- ========== 5. 验收清单 ========== -->
+      <!-- ========== 6. 验收清单 ========== -->
       <section class="panel full">
-        <h2>5. 第一步验收清单</h2>
+        <h2>6. 第一步验收清单</h2>
         <p class="hint">逐条对照，全部可在本页或外部测试页完成。</p>
         <table>
           <thead>

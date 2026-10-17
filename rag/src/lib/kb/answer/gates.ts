@@ -97,7 +97,14 @@ export function queryCoverage(query: string, hits: RetrievedChunk[]): number {
   const corpus = hits.map((hit) => hit.content).join('\n').toLowerCase();
   // 压缩形式：去掉空格与分隔符，用于匹配连写/分词差异
   const corpusCompact = corpus.replace(/[\s\-_.]/g, '');
-  const normalized = query.toLowerCase().replace(/[？?。！!，,、；;：:""''（）()【】\[\]]/g, ' ');
+  // 疑问句式不是知识主题的一部分：
+  // 「日志存放在哪里」应主要验证「日志」，而不是要求语料原样出现「在哪里」；
+  // 「敏感信息应该存在哪里」同理。保留主题词，去掉常见的提问套话，避免
+  // 中文自然问法因覆盖率被稀释而误触发 no_evidence。
+  const normalized = query
+    .toLowerCase()
+    .replace(/在哪里|何处|是什么|是多少|多少|多久|如何|怎么|怎样|哪个|哪些|是否|应该|需要|能否|可以|存放|存储|位置|路径|期限|多长|时间|要求|条件|材料|准备|流程|方案|方式|限制|内容|分别|周期|策略/g, ' ')
+    .replace(/[？?。！!，,、；;：:""''（）()【】\[\]]/g, ' ');
 
   let totalWeight = 0;
   let coveredWeight = 0;

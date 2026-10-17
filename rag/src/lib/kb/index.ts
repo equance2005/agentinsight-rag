@@ -421,8 +421,8 @@ export class KnowledgeBaseEngine {
     }
 
     // 分批调用，单批失败不影响其余批次。
-    // 批大小取 16：阿里云百炼限制单次 input ≤ 20 条。
-    const BATCH = 16;
+    // 百炼 embedding 的兼容接口限制单次 input ≤ 10 条；取该值也兼容其他提供方。
+    const BATCH = 10;
     for (let i = 0; i < items.length; i += BATCH) {
       const batch = items.slice(i, i + BATCH);
       try {

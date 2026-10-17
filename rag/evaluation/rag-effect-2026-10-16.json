@@ -1,0 +1,1716 @@
+{
+  "generatedAt": "2026-10-16T15:27:29.280Z",
+  "dataset": "evaluation/golden-set.json",
+  "providerMode": "deterministic-fixture",
+  "summary": {
+    "total": 50,
+    "passed": 50,
+    "failed": 0,
+    "passRate": 1,
+    "p50LatencyMs": 3,
+    "p95LatencyMs": 4,
+    "citationCoverage": 1,
+    "refusalAccuracy": 1
+  },
+  "results": [
+    {
+      "id": "ans-001",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "deploy.md",
+        "legacy.md",
+        "security.md",
+        "ops.md",
+        "billing.md"
+      ],
+      "retrievalDocuments": [
+        "deploy.md",
+        "legacy.md",
+        "deploy.md",
+        "security.md",
+        "ops.md",
+        "billing.md"
+      ],
+      "retrievalSnippets": [
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 7
+    },
+    {
+      "id": "ans-002",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "deploy.md",
+        "legacy.md",
+        "security.md",
+        "billing.md",
+        "ops.md"
+      ],
+      "retrievalDocuments": [
+        "deploy.md",
+        "legacy.md",
+        "security.md",
+        "deploy.md",
+        "billing.md",
+        "ops.md"
+      ],
+      "retrievalSnippets": [
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "ans-003",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "deploy.md",
+        "legacy.md",
+        "ops.md",
+        "security.md"
+      ],
+      "retrievalDocuments": [
+        "deploy.md",
+        "legacy.md",
+        "deploy.md",
+        "ops.md",
+        "security.md",
+        "ops.md"
+      ],
+      "retrievalSnippets": [
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "运维手册\n# 运维手册"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "ans-004",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "deploy.md",
+        "ops.md",
+        "billing.md",
+        "security.md",
+        "legacy.md"
+      ],
+      "retrievalDocuments": [
+        "deploy.md",
+        "ops.md",
+        "billing.md",
+        "security.md",
+        "legacy.md",
+        "deploy.md"
+      ],
+      "retrievalSnippets": [
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "ans-005",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "ops.md",
+        "security.md",
+        "deploy.md",
+        "legacy.md",
+        "billing.md"
+      ],
+      "retrievalDocuments": [
+        "ops.md",
+        "security.md",
+        "deploy.md",
+        "deploy.md",
+        "legacy.md",
+        "billing.md"
+      ],
+      "retrievalSnippets": [
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 4
+    },
+    {
+      "id": "ans-006",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "ops.md",
+        "security.md",
+        "billing.md",
+        "deploy.md",
+        "legacy.md"
+      ],
+      "retrievalDocuments": [
+        "ops.md",
+        "security.md",
+        "billing.md",
+        "deploy.md",
+        "deploy.md",
+        "legacy.md"
+      ],
+      "retrievalSnippets": [
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "部署手册\n# 部署手册",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 2
+    },
+    {
+      "id": "ans-007",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "billing.md",
+        "security.md",
+        "deploy.md",
+        "legacy.md",
+        "ops.md"
+      ],
+      "retrievalDocuments": [
+        "billing.md",
+        "security.md",
+        "deploy.md",
+        "legacy.md",
+        "deploy.md",
+        "ops.md"
+      ],
+      "retrievalSnippets": [
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 2
+    },
+    {
+      "id": "ans-008",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "billing.md",
+        "legacy.md",
+        "deploy.md",
+        "security.md",
+        "ops.md"
+      ],
+      "retrievalDocuments": [
+        "billing.md",
+        "legacy.md",
+        "deploy.md",
+        "security.md",
+        "ops.md",
+        "deploy.md"
+      ],
+      "retrievalSnippets": [
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "ans-009",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "security.md",
+        "ops.md",
+        "deploy.md",
+        "legacy.md",
+        "billing.md"
+      ],
+      "retrievalDocuments": [
+        "security.md",
+        "ops.md",
+        "deploy.md",
+        "legacy.md",
+        "billing.md",
+        "deploy.md"
+      ],
+      "retrievalSnippets": [
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "部署手册\n# 部署手册",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 2
+    },
+    {
+      "id": "ans-010",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "security.md",
+        "ops.md",
+        "billing.md",
+        "deploy.md",
+        "legacy.md"
+      ],
+      "retrievalDocuments": [
+        "security.md",
+        "ops.md",
+        "billing.md",
+        "deploy.md",
+        "deploy.md",
+        "legacy.md"
+      ],
+      "retrievalSnippets": [
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "ans-011",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "legacy.md",
+        "deploy.md",
+        "security.md",
+        "ops.md"
+      ],
+      "retrievalDocuments": [
+        "legacy.md",
+        "deploy.md",
+        "deploy.md",
+        "security.md",
+        "ops.md",
+        "deploy.md"
+      ],
+      "retrievalSnippets": [
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "运维手册\n# 运维手册",
+        "部署手册\n# 部署手册"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "ans-012",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "billing.md",
+        "legacy.md",
+        "ops.md",
+        "deploy.md"
+      ],
+      "retrievalDocuments": [
+        "billing.md",
+        "legacy.md",
+        "ops.md",
+        "deploy.md",
+        "ops.md",
+        "deploy.md"
+      ],
+      "retrievalSnippets": [
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "运维手册\n# 运维手册",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "partial-001",
+      "category": "partial",
+      "pass": true,
+      "decision": "partial",
+      "expectedDecision": "partial",
+      "citations": 6,
+      "citedDocuments": [
+        "legacy.md",
+        "deploy.md",
+        "ops.md",
+        "security.md",
+        "billing.md"
+      ],
+      "retrievalDocuments": [
+        "legacy.md",
+        "deploy.md",
+        "deploy.md",
+        "ops.md",
+        "security.md",
+        "billing.md"
+      ],
+      "retrievalSnippets": [
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 2
+    },
+    {
+      "id": "partial-002",
+      "category": "partial",
+      "pass": true,
+      "decision": "partial",
+      "expectedDecision": "partial",
+      "citations": 6,
+      "citedDocuments": [
+        "security.md",
+        "ops.md",
+        "legacy.md",
+        "deploy.md"
+      ],
+      "retrievalDocuments": [
+        "security.md",
+        "ops.md",
+        "legacy.md",
+        "deploy.md",
+        "deploy.md",
+        "deploy.md"
+      ],
+      "retrievalSnippets": [
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "部署手册\n# 部署手册",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "conflict-001",
+      "category": "conflict",
+      "pass": true,
+      "decision": "conflict",
+      "expectedDecision": "conflict",
+      "citations": 6,
+      "citedDocuments": [
+        "legacy.md",
+        "deploy.md",
+        "ops.md"
+      ],
+      "retrievalDocuments": [
+        "legacy.md",
+        "deploy.md",
+        "deploy.md",
+        "ops.md",
+        "ops.md",
+        "deploy.md"
+      ],
+      "retrievalSnippets": [
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "运维手册\n# 运维手册",
+        "部署手册\n# 部署手册"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "conflict-002",
+      "category": "conflict",
+      "pass": true,
+      "decision": "conflict",
+      "expectedDecision": "conflict",
+      "citations": 6,
+      "citedDocuments": [
+        "legacy.md",
+        "deploy.md",
+        "security.md",
+        "ops.md",
+        "billing.md"
+      ],
+      "retrievalDocuments": [
+        "legacy.md",
+        "deploy.md",
+        "deploy.md",
+        "security.md",
+        "ops.md",
+        "billing.md"
+      ],
+      "retrievalSnippets": [
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 4
+    },
+    {
+      "id": "reject-001",
+      "category": "no_evidence",
+      "pass": true,
+      "decision": "no_evidence",
+      "expectedDecision": "no_evidence",
+      "citations": 0,
+      "citedDocuments": [],
+      "retrievalDocuments": [
+        "billing.md",
+        "legacy.md",
+        "deploy.md",
+        "security.md",
+        "deploy.md",
+        "ops.md"
+      ],
+      "retrievalSnippets": [
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "reject-002",
+      "category": "no_evidence",
+      "pass": true,
+      "decision": "no_evidence",
+      "expectedDecision": "no_evidence",
+      "citations": 0,
+      "citedDocuments": [],
+      "retrievalDocuments": [
+        "deploy.md",
+        "deploy.md",
+        "deploy.md",
+        "ops.md",
+        "legacy.md",
+        "billing.md"
+      ],
+      "retrievalSnippets": [
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "部署手册\n# 部署手册",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "reject-003",
+      "category": "no_evidence",
+      "pass": true,
+      "decision": "no_evidence",
+      "expectedDecision": "no_evidence",
+      "citations": 0,
+      "citedDocuments": [],
+      "retrievalDocuments": [
+        "deploy.md",
+        "deploy.md",
+        "security.md",
+        "billing.md",
+        "ops.md",
+        "legacy.md"
+      ],
+      "retrievalSnippets": [
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "reject-004",
+      "category": "no_evidence",
+      "pass": true,
+      "decision": "no_evidence",
+      "expectedDecision": "no_evidence",
+      "citations": 0,
+      "citedDocuments": [],
+      "retrievalDocuments": [
+        "billing.md",
+        "security.md",
+        "deploy.md",
+        "legacy.md",
+        "ops.md",
+        "deploy.md"
+      ],
+      "retrievalSnippets": [
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "ans-013",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "deploy.md",
+        "legacy.md",
+        "security.md",
+        "ops.md"
+      ],
+      "retrievalDocuments": [
+        "deploy.md",
+        "legacy.md",
+        "security.md",
+        "deploy.md",
+        "ops.md",
+        "ops.md"
+      ],
+      "retrievalSnippets": [
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "运维手册\n# 运维手册",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "ans-014",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "deploy.md",
+        "legacy.md",
+        "security.md",
+        "billing.md",
+        "ops.md"
+      ],
+      "retrievalDocuments": [
+        "deploy.md",
+        "legacy.md",
+        "security.md",
+        "deploy.md",
+        "billing.md",
+        "ops.md"
+      ],
+      "retrievalSnippets": [
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "ans-015",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "deploy.md",
+        "legacy.md",
+        "ops.md",
+        "security.md"
+      ],
+      "retrievalDocuments": [
+        "deploy.md",
+        "legacy.md",
+        "deploy.md",
+        "ops.md",
+        "security.md",
+        "ops.md"
+      ],
+      "retrievalSnippets": [
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "运维手册\n# 运维手册"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "ans-016",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "deploy.md",
+        "ops.md",
+        "billing.md",
+        "security.md",
+        "legacy.md"
+      ],
+      "retrievalDocuments": [
+        "deploy.md",
+        "ops.md",
+        "billing.md",
+        "security.md",
+        "deploy.md",
+        "legacy.md"
+      ],
+      "retrievalSnippets": [
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 2
+    },
+    {
+      "id": "ans-017",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "security.md",
+        "ops.md",
+        "billing.md",
+        "deploy.md",
+        "legacy.md"
+      ],
+      "retrievalDocuments": [
+        "security.md",
+        "ops.md",
+        "billing.md",
+        "deploy.md",
+        "deploy.md",
+        "legacy.md"
+      ],
+      "retrievalSnippets": [
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 2
+    },
+    {
+      "id": "ans-018",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "ops.md",
+        "security.md",
+        "legacy.md",
+        "billing.md",
+        "deploy.md"
+      ],
+      "retrievalDocuments": [
+        "ops.md",
+        "security.md",
+        "legacy.md",
+        "billing.md",
+        "deploy.md",
+        "deploy.md"
+      ],
+      "retrievalSnippets": [
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 2
+    },
+    {
+      "id": "ans-019",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "billing.md",
+        "deploy.md",
+        "legacy.md",
+        "ops.md",
+        "security.md"
+      ],
+      "retrievalDocuments": [
+        "billing.md",
+        "deploy.md",
+        "legacy.md",
+        "ops.md",
+        "security.md",
+        "deploy.md"
+      ],
+      "retrievalSnippets": [
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 2
+    },
+    {
+      "id": "ans-020",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "billing.md",
+        "legacy.md",
+        "deploy.md",
+        "security.md",
+        "ops.md"
+      ],
+      "retrievalDocuments": [
+        "billing.md",
+        "legacy.md",
+        "deploy.md",
+        "deploy.md",
+        "security.md",
+        "ops.md"
+      ],
+      "retrievalSnippets": [
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "运维手册\n# 运维手册"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 2
+    },
+    {
+      "id": "ans-021",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "security.md",
+        "ops.md",
+        "legacy.md",
+        "deploy.md",
+        "billing.md"
+      ],
+      "retrievalDocuments": [
+        "security.md",
+        "ops.md",
+        "legacy.md",
+        "deploy.md",
+        "billing.md",
+        "deploy.md"
+      ],
+      "retrievalSnippets": [
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "ans-022",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "security.md",
+        "legacy.md",
+        "ops.md",
+        "deploy.md"
+      ],
+      "retrievalDocuments": [
+        "security.md",
+        "legacy.md",
+        "ops.md",
+        "deploy.md",
+        "deploy.md",
+        "ops.md"
+      ],
+      "retrievalSnippets": [
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "运维手册\n# 运维手册"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 2
+    },
+    {
+      "id": "ans-023",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "deploy.md",
+        "legacy.md",
+        "ops.md",
+        "security.md"
+      ],
+      "retrievalDocuments": [
+        "deploy.md",
+        "legacy.md",
+        "deploy.md",
+        "ops.md",
+        "security.md",
+        "ops.md"
+      ],
+      "retrievalSnippets": [
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "运维手册\n# 运维手册"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 5
+    },
+    {
+      "id": "ans-024",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "deploy.md",
+        "legacy.md",
+        "ops.md"
+      ],
+      "retrievalDocuments": [
+        "deploy.md",
+        "legacy.md",
+        "deploy.md",
+        "ops.md",
+        "ops.md",
+        "deploy.md"
+      ],
+      "retrievalSnippets": [
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "运维手册\n# 运维手册",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "部署手册\n# 部署手册"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "ans-025",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "billing.md",
+        "legacy.md",
+        "ops.md",
+        "deploy.md"
+      ],
+      "retrievalDocuments": [
+        "billing.md",
+        "legacy.md",
+        "ops.md",
+        "ops.md",
+        "deploy.md",
+        "deploy.md"
+      ],
+      "retrievalSnippets": [
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "运维手册\n# 运维手册",
+        "部署手册\n# 部署手册",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 2
+    },
+    {
+      "id": "ans-026",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "security.md",
+        "ops.md",
+        "deploy.md",
+        "legacy.md",
+        "billing.md"
+      ],
+      "retrievalDocuments": [
+        "security.md",
+        "ops.md",
+        "deploy.md",
+        "legacy.md",
+        "billing.md",
+        "ops.md"
+      ],
+      "retrievalSnippets": [
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "运维手册\n# 运维手册"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "ans-027",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "deploy.md",
+        "legacy.md",
+        "security.md",
+        "ops.md",
+        "billing.md"
+      ],
+      "retrievalDocuments": [
+        "deploy.md",
+        "legacy.md",
+        "deploy.md",
+        "security.md",
+        "ops.md",
+        "billing.md"
+      ],
+      "retrievalSnippets": [
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 2
+    },
+    {
+      "id": "ans-028",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "security.md",
+        "ops.md",
+        "billing.md",
+        "legacy.md",
+        "deploy.md"
+      ],
+      "retrievalDocuments": [
+        "security.md",
+        "ops.md",
+        "billing.md",
+        "legacy.md",
+        "ops.md",
+        "deploy.md"
+      ],
+      "retrievalSnippets": [
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "运维手册\n# 运维手册",
+        "部署手册\n# 部署手册"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 4
+    },
+    {
+      "id": "ans-029",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "billing.md",
+        "security.md",
+        "ops.md",
+        "deploy.md",
+        "legacy.md"
+      ],
+      "retrievalDocuments": [
+        "billing.md",
+        "security.md",
+        "ops.md",
+        "deploy.md",
+        "legacy.md",
+        "deploy.md"
+      ],
+      "retrievalSnippets": [
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 2
+    },
+    {
+      "id": "ans-030",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "security.md",
+        "ops.md",
+        "billing.md",
+        "deploy.md",
+        "legacy.md"
+      ],
+      "retrievalDocuments": [
+        "security.md",
+        "ops.md",
+        "billing.md",
+        "deploy.md",
+        "deploy.md",
+        "legacy.md"
+      ],
+      "retrievalSnippets": [
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "ans-031",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "ops.md",
+        "security.md",
+        "deploy.md",
+        "legacy.md",
+        "billing.md"
+      ],
+      "retrievalDocuments": [
+        "ops.md",
+        "security.md",
+        "deploy.md",
+        "deploy.md",
+        "legacy.md",
+        "billing.md"
+      ],
+      "retrievalSnippets": [
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 2
+    },
+    {
+      "id": "ans-032",
+      "category": "answerable",
+      "pass": true,
+      "decision": "answerable",
+      "expectedDecision": "answerable",
+      "citations": 6,
+      "citedDocuments": [
+        "ops.md",
+        "security.md",
+        "billing.md",
+        "deploy.md",
+        "legacy.md"
+      ],
+      "retrievalDocuments": [
+        "ops.md",
+        "security.md",
+        "billing.md",
+        "deploy.md",
+        "deploy.md",
+        "legacy.md"
+      ],
+      "retrievalSnippets": [
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "部署手册\n# 部署手册",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 2
+    },
+    {
+      "id": "partial-003",
+      "category": "partial",
+      "pass": true,
+      "decision": "partial",
+      "expectedDecision": "partial",
+      "citations": 6,
+      "citedDocuments": [
+        "legacy.md",
+        "deploy.md",
+        "ops.md",
+        "security.md"
+      ],
+      "retrievalDocuments": [
+        "legacy.md",
+        "deploy.md",
+        "deploy.md",
+        "ops.md",
+        "ops.md",
+        "security.md"
+      ],
+      "retrievalSnippets": [
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "运维手册\n# 运维手册",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "partial-004",
+      "category": "partial",
+      "pass": true,
+      "decision": "partial",
+      "expectedDecision": "partial",
+      "citations": 6,
+      "citedDocuments": [
+        "ops.md",
+        "security.md",
+        "legacy.md",
+        "deploy.md",
+        "billing.md"
+      ],
+      "retrievalDocuments": [
+        "ops.md",
+        "security.md",
+        "legacy.md",
+        "deploy.md",
+        "billing.md",
+        "deploy.md"
+      ],
+      "retrievalSnippets": [
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册\n# 部署手册",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 2
+    },
+    {
+      "id": "partial-005",
+      "category": "partial",
+      "pass": true,
+      "decision": "partial",
+      "expectedDecision": "partial",
+      "citations": 6,
+      "citedDocuments": [
+        "billing.md",
+        "security.md",
+        "legacy.md",
+        "deploy.md",
+        "ops.md"
+      ],
+      "retrievalDocuments": [
+        "billing.md",
+        "security.md",
+        "legacy.md",
+        "deploy.md",
+        "ops.md",
+        "deploy.md"
+      ],
+      "retrievalSnippets": [
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "运维手册\n# 运维手册",
+        "部署手册\n# 部署手册"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 2
+    },
+    {
+      "id": "partial-006",
+      "category": "partial",
+      "pass": true,
+      "decision": "partial",
+      "expectedDecision": "partial",
+      "citations": 6,
+      "citedDocuments": [
+        "security.md",
+        "ops.md",
+        "legacy.md",
+        "billing.md",
+        "deploy.md"
+      ],
+      "retrievalDocuments": [
+        "security.md",
+        "ops.md",
+        "legacy.md",
+        "billing.md",
+        "deploy.md",
+        "ops.md"
+      ],
+      "retrievalSnippets": [
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "运维手册\n# 运维手册"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "partial-007",
+      "category": "partial",
+      "pass": true,
+      "decision": "partial",
+      "expectedDecision": "partial",
+      "citations": 6,
+      "citedDocuments": [
+        "deploy.md",
+        "legacy.md",
+        "security.md",
+        "billing.md",
+        "ops.md"
+      ],
+      "retrievalDocuments": [
+        "deploy.md",
+        "legacy.md",
+        "security.md",
+        "deploy.md",
+        "billing.md",
+        "ops.md"
+      ],
+      "retrievalSnippets": [
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "运维手册\n# 运维手册"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 2
+    },
+    {
+      "id": "conflict-003",
+      "category": "conflict",
+      "pass": true,
+      "decision": "conflict",
+      "expectedDecision": "conflict",
+      "citations": 6,
+      "citedDocuments": [
+        "legacy.md",
+        "deploy.md",
+        "billing.md",
+        "ops.md"
+      ],
+      "retrievalDocuments": [
+        "legacy.md",
+        "deploy.md",
+        "deploy.md",
+        "billing.md",
+        "ops.md",
+        "ops.md"
+      ],
+      "retrievalSnippets": [
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "运维手册\n# 运维手册",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 4
+    },
+    {
+      "id": "conflict-004",
+      "category": "conflict",
+      "pass": true,
+      "decision": "conflict",
+      "expectedDecision": "conflict",
+      "citations": 6,
+      "citedDocuments": [
+        "legacy.md",
+        "deploy.md",
+        "security.md",
+        "billing.md",
+        "ops.md"
+      ],
+      "retrievalDocuments": [
+        "legacy.md",
+        "deploy.md",
+        "deploy.md",
+        "security.md",
+        "billing.md",
+        "ops.md"
+      ],
+      "retrievalSnippets": [
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "conflict-005",
+      "category": "conflict",
+      "pass": true,
+      "decision": "conflict",
+      "expectedDecision": "conflict",
+      "citations": 6,
+      "citedDocuments": [
+        "legacy.md",
+        "deploy.md",
+        "security.md",
+        "billing.md",
+        "ops.md"
+      ],
+      "retrievalDocuments": [
+        "legacy.md",
+        "deploy.md",
+        "deploy.md",
+        "security.md",
+        "billing.md",
+        "ops.md"
+      ],
+      "retrievalSnippets": [
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "运维手册\n# 运维手册"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "reject-005",
+      "category": "no_evidence",
+      "pass": true,
+      "decision": "no_evidence",
+      "expectedDecision": "no_evidence",
+      "citations": 0,
+      "citedDocuments": [],
+      "retrievalDocuments": [
+        "deploy.md",
+        "deploy.md",
+        "ops.md",
+        "security.md",
+        "billing.md",
+        "legacy.md"
+      ],
+      "retrievalSnippets": [
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。",
+        "退款政策\n# 退款政策\n\n购买后 7 天内可以无理由退款，超过 7 天不予退款。\n\n退款申请需要提供订单号。",
+        "数据库端口说明（旧版）\n# 数据库端口说明（旧版）\n\n数据库默认端口是 3306。\n注意：本条记录来自旧版文档，与新版不一致。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "id": "reject-006",
+      "category": "no_evidence",
+      "pass": true,
+      "decision": "no_evidence",
+      "expectedDecision": "no_evidence",
+      "citations": 0,
+      "citedDocuments": [],
+      "retrievalDocuments": [
+        "deploy.md",
+        "deploy.md",
+        "deploy.md",
+        "ops.md",
+        "ops.md",
+        "security.md"
+      ],
+      "retrievalSnippets": [
+        "部署手册\n# 部署手册",
+        "部署手册 > 数据库\n## 数据库\n\n数据库默认端口是 5432，连接池上限为 20。",
+        "部署手册 > 端口配置\n## 端口配置\n\n服务默认监听端口为 3000，可以通过配置文件修改。",
+        "运维手册 > 日志\n## 日志\n\n日志默认保留 30 天，存放于 /var/log/kb 目录。",
+        "运维手册\n# 运维手册",
+        "安全规范\n# 安全规范\n\n所有敏感信息必须存储在密钥管理服务中。\n\n审计日志保留 180 天。"
+      ],
+      "requiredTermsCovered": true,
+      "requiredDocumentsCovered": true,
+      "unsupportedClaimCount": 0,
+      "latencyMs": 2
+    }
+  ]
+}
