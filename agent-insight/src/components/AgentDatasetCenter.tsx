@@ -431,6 +431,9 @@ export default function AgentDatasetCenter() {
 
   const handleDeleteDataset = async (item: AgentDatasetListItem) => {
     if (!user) return;
+    window.dispatchEvent(new CustomEvent('agent-insight:copilot-context', {
+      detail: { pageType: 'dataset', objectType: 'dataset', objectId: item.id, snapshot: { title: item.name } },
+    }));
     if (item.readOnly || item.datasetKind === 'benchmark') {
       setTableActionError('Benchmark 数据集由系统导入并维护，不可删除');
       return;
