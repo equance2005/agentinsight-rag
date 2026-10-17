@@ -66,7 +66,10 @@ export async function POST(request: Request) {
         instructions: body.instructions || body.input?.instructions || message,
       }));
     } else if (intent.action === 'dataset_delete') {
-      workflowPreview = await buildDatasetDeletePreview(loaded, workflowInputSchema.parse(body.input || {}));
+      workflowPreview = await buildDatasetDeletePreview(loaded, workflowInputSchema.parse({
+        ...(body.input && typeof body.input === 'object' ? body.input : {}),
+        datasetName: body.datasetName || body.input?.datasetName || extractDatasetName(message),
+      }));
     } else if (intent.action === 'experiment_start') {
       workflowPreview = await buildExperimentStartPreview(loaded, workflowInputSchema.parse(body.input || {}));
     } else if (intent.action === 'skill_publish') {

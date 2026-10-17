@@ -252,9 +252,16 @@ export async function buildRunFilterPreview(context: CopilotContextResult, input
 }
 
 export async function buildDatasetDeletePreview(context: CopilotContextResult, input: WorkflowInput): Promise<WorkflowPreview> {
-  const datasetId = String(input.datasetId || context.envelope.objectId || '').trim();
-  if (!datasetId) throw new Error('请先选择要删除的数据集');
-  const dataset = await findAgentDataset(context.envelope.user, datasetId);
+  let datasetId = String(input.datasetId || context.envelope.objectId || '').trim();
+  let dataset = datasetId ? await findAgentDataset(context.envelope.user, datasetId) : null;
+  if (!dataset && input.datasetName?.trim()) {
+    const requestedName = input.datasetName.trim();
+    const matches = (await readUserAgentDatasets(context.envelope.user)).filter(item => item.name === requestedName);
+    if (matches.length > 1) throw new Error(`找到多个名为「${requestedName}」的数据集，请先选择具体数据集`);
+    dataset = matches[0] || null;
+    datasetId = dataset?.id || '';
+  }
+  if (!datasetId && !dataset) throw new Error('请先说明要删除的数据集名称，或在页面选择一个数据集');
   if (!dataset) throw new Error('数据集不存在或无权访问');
   const expiresAt = Date.now() + PREVIEW_TTL_MS;
   const changes = { datasetId: dataset.id, name: dataset.name, caseCount: dataset.cases.length, destructive: true };

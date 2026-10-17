@@ -62,8 +62,12 @@ export interface WorkflowPreview {
 }
 
 export function extractDatasetName(message: string): string | undefined {
-  const match = message.match(/(?:名称\s*(?:叫|为|是)?|命名为|名为|叫)\s*[「“"'`]?\s*([^」”"'`\s，。！？!?]+)/i);
-  return match?.[1]?.trim() || undefined;
+  const explicit = message.match(/(?:名称\s*(?:叫|为|是)?|命名为|名为|叫)\s*[「“"'`]?\s*([^」”"'`\s，。！？!?]+)/i);
+  if (explicit?.[1]?.trim()) return explicit[1].trim();
+  const deletion = message.match(/(?:删除|delete)\s*[「“"'`]?\s*(.+?)\s*[」”"'`]?\s*(?:这个|该|the)?\s*(?:数据集|评测集|dataset)(?:[。.!！?？]|$)/i);
+  const name = deletion?.[1]?.trim();
+  if (!name || /^(?:这个|该|the)$/i.test(name)) return undefined;
+  return name;
 }
 
 export function classifyIntent(message: string, hasContext: boolean): CopilotRoute {
