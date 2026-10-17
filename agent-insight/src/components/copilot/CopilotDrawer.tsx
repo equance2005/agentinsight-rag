@@ -17,7 +17,7 @@ type Context = {
 };
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 type ImageAttachment = { name: string; mimeType: string; dataUrl: string };
-type Source = { id: string; kind: string; label: string; locator: string; href?: string };
+type Source = { id: string; kind: string; label: string; locator: string; href?: string; excerpt?: string };
 type CopilotPlan = {
   id: string;
   goal: string;
@@ -81,6 +81,24 @@ function RoboExpandIcon({ size = 14 }: { size?: number }) {
       <Bot size={size} strokeWidth={2.1} />
     </span>
   );
+}
+
+function formatSourceExcerpt(value?: string) {
+  if (!value?.trim()) return '';
+  const compact = value.replace(/\s+/g, ' ').trim();
+  try {
+    const parsed = JSON.parse(value) as Record<string, unknown>;
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      const fields = Object.entries(parsed).slice(0, 4).map(([key, item]) => {
+        const text = typeof item === 'string' ? item : JSON.stringify(item);
+        return `${key}: ${text}`;
+      });
+      return fields.join(' · ').slice(0, 360);
+    }
+  } catch {
+    // Trace content can be plain text; use the compact representation below.
+  }
+  return compact.slice(0, 360);
 }
 
 function ModelGroup({
@@ -438,7 +456,7 @@ export default function CopilotDrawer() {
                 <div style={styles.sectionLabel}>来源</div>
                 {summarySources.map(source => <a href={source.href || '#'} key={source.id} style={styles.source}><FileText size={14} /><span>{source.label}</span><span style={styles.sourceLocator}>{source.locator}</span></a>)}
                 {traceSteps.length > 0 && <button type="button" onClick={() => setShowTraceSteps(value => !value)} style={styles.sourceToggle} aria-expanded={showTraceSteps}>{showTraceSteps ? '收起执行步骤' : `展开执行步骤（${traceSteps.length}）`}<RoboExpandIcon size={13} /></button>}
-                {showTraceSteps && traceSteps.map(source => <a href={source.href || '#'} key={source.id} style={styles.source}><FileText size={14} /><span>{source.label}</span><span style={styles.sourceLocator}>{source.locator}</span></a>)}
+                {showTraceSteps && traceSteps.map(source => <div key={source.id} style={styles.traceStep}><a href={source.href || '#'} style={styles.source} title="打开当前 Trace"><FileText size={14} /><span>{source.label}</span><span style={styles.sourceLocator}>{source.locator}</span></a>{source.excerpt && <div style={styles.traceStepExcerpt}>{formatSourceExcerpt(source.excerpt)}</div>}</div>)}
               </section>;
             })()}
             {preview && <section style={styles.preview}><div style={styles.sectionLabel}>{preview.action === 'run_filter' ? 'Trace 查询结果' : `工作流草稿 · ${preview.target}`}</div><pre style={styles.previewJson}>{JSON.stringify(preview.changes, null, 2)}</pre>{preview.missing.length > 0 && <div style={styles.missing}>还缺少：{preview.missing.join('、')}</div>}<div style={styles.previewActions}><button type="button" onClick={() => setPreview(null)} style={styles.secondaryButton}>{preview.action === 'run_filter' ? '关闭' : '取消'}</button>{preview.action !== 'run_filter' && <button type="button" disabled={busy} onClick={confirmPreview} style={styles.primaryButton}>{preview.action === 'dataset_delete' ? '确认删除' : preview.action === 'experiment_start' ? '确认启动' : preview.action === 'skill_publish' ? '确认发布' : '确认写入'}</button>}</div></section>}
@@ -517,6 +535,8 @@ const styles: Record<string, React.CSSProperties> = {
   planStepTitle: { color: 'var(--foreground-secondary)', fontSize: 12 },
   planStepMeta: { color: 'var(--foreground-muted)', fontSize: 10, fontFamily: 'var(--font-mono, monospace)' },
   source: { display: 'flex', alignItems: 'center', gap: 7, color: 'var(--foreground-secondary)', fontSize: 12, padding: '6px 0', textDecoration: 'none' },
+  traceStep: { borderBottom: '1px solid var(--border)', paddingBottom: 7, marginBottom: 7 },
+  traceStepExcerpt: { margin: '0 0 2px 21px', color: 'var(--foreground-muted)', fontSize: 11, lineHeight: 1.5, overflowWrap: 'anywhere' },
   sourceToggle: { display: 'flex', alignItems: 'center', gap: 5, width: '100%', border: 0, background: 'transparent', color: 'var(--primary)', padding: '7px 0', cursor: 'pointer', fontSize: 12, textAlign: 'left' },
   sourceLocator: { marginLeft: 'auto', color: 'var(--foreground-muted)', fontSize: 11, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   preview: { border: '1px solid var(--primary-subtle-border)', borderRadius: 9, background: 'var(--primary-subtle)', padding: 11 },

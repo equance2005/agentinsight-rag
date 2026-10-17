@@ -16,7 +16,7 @@ export type CopilotReactResult = {
   answer: string;
   steps: CopilotReactStep[];
   proposedActions: string[];
-  sources: Array<{ id: string; kind: string; label: string; locator: string; href?: string }>;
+  sources: Array<{ id: string; kind: string; label: string; locator: string; href?: string; excerpt?: string }>;
   missing: string[];
 };
 
@@ -78,7 +78,7 @@ export async function runBoundedTraceDiagnosis(input: {
   return {
     mode: 'bounded-react', maxSteps: MAX_STEPS, status: 'awaiting_confirmation', answer, steps,
     proposedActions: ['确认后再创建数据集、修改 Skill、创建评估器或启动实验'],
-    sources: [...loaded.sources, ...rag.sources].map(({ content: _content, ...source }) => source),
+    sources: [...loaded.sources, ...rag.sources].map(({ content, ...source }) => ({ ...source, excerpt: content })),
     missing: [...loaded.missing, ...rag.missing],
   };
 }

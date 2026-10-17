@@ -85,7 +85,7 @@ export async function POST(request: Request) {
         run,
         preview: workflowPreview,
         workflowResult,
-        sources: loaded.sources.map(source => ({ id: source.id, kind: source.kind, label: source.label, locator: source.locator, href: source.href })),
+        sources: loaded.sources.map(source => ({ id: source.id, kind: source.kind, label: source.label, locator: source.locator, href: source.href, excerpt: source.content })),
         missing: loaded.missing,
       });
     }
@@ -124,7 +124,7 @@ export async function POST(request: Request) {
       run,
       ...(workflowPreview ? { preview: workflowPreview } : {}),
       ...(workflowResult ? { workflowResult } : {}),
-      sources: allSources.map(source => ({ id: source.id, kind: source.kind, label: source.label, locator: source.locator, href: source.href })),
+      sources: allSources.map(source => ({ id: source.id, kind: source.kind, label: source.label, locator: source.locator, href: source.href, excerpt: source.content })),
       missing: [...loaded.missing, ...rag.missing],
     });
   } catch (error) {
