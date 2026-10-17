@@ -346,6 +346,9 @@ export default function AgentDatasetCenter() {
 
   const openEditorForDataset = async (dataset: AgentDatasetListItem) => {
     if (!user) return;
+    window.dispatchEvent(new CustomEvent('agent-insight:copilot-context', {
+      detail: { pageType: 'dataset', objectType: 'dataset', objectId: dataset.id, snapshot: { title: dataset.name } },
+    }));
     if (dataset.readOnly || dataset.datasetKind === 'benchmark') {
       setTableActionError('Benchmark 数据集由系统导入并维护，只能查看和发起评测');
       return;

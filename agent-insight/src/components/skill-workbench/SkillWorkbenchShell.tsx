@@ -150,6 +150,22 @@ export function SkillWorkbenchShell() {
   const [workbenchWidth, setWorkbenchWidth] = useState(
     COPILOT_DEFAULT_WIDTH + WORKSPACE_MIN_WIDTH + WORKBENCH_DIVIDER_WIDTH,
   );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent('agent-insight:copilot-context', {
+      detail: selectedAsset?.id
+        ? {
+            pageType: 'skill',
+            objectType: 'skillVersion',
+            objectId: selectedAsset.id,
+            sessionId: selectedAsset.sessionId || undefined,
+            version: selectedAsset.version,
+            snapshot: { title: `${selectedAsset.skillName} v${selectedAsset.version}` },
+          }
+        : { pageType: 'skill', objectType: 'unknown' },
+    }));
+  }, [selectedAsset]);
   const workbenchRef = useRef<HTMLDivElement | null>(null);
   const resizeStartRef = useRef<{ x: number; width: number } | null>(null);
   const reportError = useCallback((message: string) => setError(message), []);

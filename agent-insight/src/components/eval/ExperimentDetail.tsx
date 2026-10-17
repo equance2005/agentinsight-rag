@@ -208,6 +208,15 @@ export function ExperimentDetail({
   const [comments, setComments] = useState<EvalCommentRow[]>([]);
   const loadSequence = useRef(0);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent('agent-insight:copilot-context', {
+      detail: detail
+        ? { pageType: 'evaluation', objectType: 'evaluation', objectId: detail.id, snapshot: { title: detail.name } }
+        : { pageType: 'evaluation', objectType: 'unknown' },
+    }));
+  }, [detail]);
+
   const loadComments = useCallback(async () => {
     if (!user) return;
     try {
