@@ -1,5 +1,5 @@
 import { db } from '@/lib/storage/prisma';
-import { findAgentDataset } from '@/server/agent_datasets_storage';
+import { findAgentDataset, readAgentDatasetSummaries } from '@/server/agent_datasets_storage';
 import { contextSchema, classifyIntent, type CopilotContextEnvelope, type CopilotContextResult, type CopilotSource } from './contracts';
 import { redactAgentTrajectoryPromptValue } from '@/lib/engine/evaluation/agent-trajectory-facts';
 import { findAgentDebugReport, parseReportPayload } from '@/lib/engine/agent-debug/report-store';
@@ -101,6 +101,37 @@ async function datasetContext(envelope: CopilotContextEnvelope): Promise<Copilot
   return { envelope, sources: [source], facts: { datasetId: dataset.id, caseCount: dataset.cases.length }, missing: dataset.cases.length === 0 ? ['数据集目前没有样例'] : [] };
 }
 
+async function datasetListContext(envelope: CopilotContextEnvelope): Promise<CopilotContextResult> {
+  const datasets = await readAgentDatasetSummaries(envelope.user);
+  const source: CopilotSource = {
+    id: 'dataset-list',
+    kind: 'dataset-list',
+    label: `数据集页面（${datasets.length} 个数据集）`,
+    locator: 'dataset:list',
+    href: '/dataset',
+    content: compact({
+      page: 'dataset',
+      capabilities: ['创建数据集', '导入数据集', '编辑数据集', '删除可编辑数据集', '发起评测'],
+      datasetCount: datasets.length,
+      datasets: datasets.slice(0, 30).map(dataset => ({
+        id: dataset.id,
+        name: dataset.name,
+        description: dataset.description,
+        datasetKind: dataset.datasetKind,
+        caseCount: dataset.caseCount,
+        fields: dataset.fields,
+        readOnly: dataset.user !== envelope.user,
+      })),
+    }, 14000),
+  };
+  return {
+    envelope,
+    sources: [source],
+    facts: { datasetCount: datasets.length, datasetIds: datasets.map(dataset => dataset.id) },
+    missing: datasets.length > 30 ? [`当前共有 ${datasets.length} 个数据集，仅展示前 30 个摘要`] : [],
+  };
+}
+
 async function skillContext(envelope: CopilotContextEnvelope): Promise<CopilotContextResult> {
   const id = String(envelope.objectId || '').trim();
   const skill = await db.findSkill(id, envelope.user);
@@ -121,7 +152,10 @@ async function skillContext(envelope: CopilotContextEnvelope): Promise<CopilotCo
 export async function loadCopilotContext(envelope: CopilotContextEnvelope): Promise<CopilotContextResult> {
   if (!envelope.user) throw new Error('user is required');
   contextSchema.parse(envelope);
-  if (!envelope.objectId) return { envelope, sources: [], facts: {}, missing: ['当前页面尚未选择可分析的对象'] };
+  if (!envelope.objectId) {
+    if (envelope.pageType === 'dataset') return datasetListContext(envelope);
+    return { envelope, sources: [], facts: {}, missing: ['当前页面尚未选择可分析的对象'] };
+  }
   if (envelope.objectType === 'execution' || envelope.objectType === 'task') return executionContext(envelope);
   if (envelope.objectType === 'dataset' || envelope.objectType === 'case') return datasetContext(envelope);
   if (envelope.objectType === 'skillVersion') return skillContext(envelope);

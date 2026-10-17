@@ -158,6 +158,8 @@ export default function CopilotDrawer() {
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [modelsLoading, setModelsLoading] = useState(false);
   const requestRef = useRef<AbortController | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const scrollTopRef = useRef(0);
   const hydratedStorageKeyRef = useRef<string | null>(null);
   const [context, setContext] = useState<Context>(() => {
     if (typeof window === 'undefined') return {};
@@ -226,9 +228,10 @@ export default function CopilotDrawer() {
     const timer = window.setTimeout(() => {
       try {
         const raw = window.localStorage.getItem(storageKey);
-        const saved = raw ? JSON.parse(raw) as { messages?: ChatMessage[]; sources?: Source[] } : null;
+        const saved = raw ? JSON.parse(raw) as { messages?: ChatMessage[]; sources?: Source[]; scrollTop?: number } : null;
         setMessages(Array.isArray(saved?.messages) ? saved.messages : []);
         setSources(Array.isArray(saved?.sources) ? saved.sources : []);
+        scrollTopRef.current = typeof saved?.scrollTop === 'number' && Number.isFinite(saved.scrollTop) ? Math.max(0, saved.scrollTop) : 0;
       } catch {
         setMessages([]);
         setSources([]);
@@ -242,13 +245,52 @@ export default function CopilotDrawer() {
     const storageKey = hydratedStorageKeyRef.current;
     if (typeof window === 'undefined' || !storageKey) return;
     try {
-      window.localStorage.setItem(storageKey, JSON.stringify({ messages, sources }));
+      window.localStorage.setItem(storageKey, JSON.stringify({ messages, sources, scrollTop: scrollTopRef.current }));
     } catch {
       // Keep the in-memory conversation if browser storage is unavailable.
     }
   }, [messages, sources]);
 
+  useEffect(() => {
+    if (!open) return;
+    let firstFrame = 0;
+    let secondFrame = 0;
+    const restore = () => {
+      const element = scrollRef.current;
+      if (!element) return;
+      element.scrollTop = Math.min(scrollTopRef.current, Math.max(0, element.scrollHeight - element.clientHeight));
+    };
+    firstFrame = window.requestAnimationFrame(() => {
+      restore();
+      secondFrame = window.requestAnimationFrame(restore);
+    });
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      if (secondFrame) window.cancelAnimationFrame(secondFrame);
+    };
+  }, [open]);
+
+  function rememberScrollPosition() {
+    const value = scrollRef.current?.scrollTop;
+    if (typeof value === 'number' && Number.isFinite(value)) scrollTopRef.current = Math.max(0, value);
+    const storageKey = hydratedStorageKeyRef.current;
+    if (!storageKey || typeof window === 'undefined') return;
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      const saved = raw ? JSON.parse(raw) as Record<string, unknown> : {};
+      window.localStorage.setItem(storageKey, JSON.stringify({ ...saved, messages, sources, scrollTop: scrollTopRef.current }));
+    } catch {
+      // Keep the position in memory if browser storage is unavailable.
+    }
+  }
+
+  function openDrawer() {
+    setClosing(false);
+    setOpen(true);
+  }
+
   function closeDrawer() {
+    rememberScrollPosition();
     setClosing(true);
     window.setTimeout(() => {
       setOpen(false);
@@ -400,7 +442,7 @@ export default function CopilotDrawer() {
   return (
     <>
       {!open && (
-        <button type="button" aria-label="打开助手" onClick={() => setOpen(true)} style={styles.fab}>
+        <button type="button" aria-label="打开助手" onClick={openDrawer} style={styles.fab}>
           <Bot size={22} strokeWidth={2.2} />
           <span style={styles.fabDot} />
         </button>
@@ -413,7 +455,10 @@ export default function CopilotDrawer() {
             </div>
           </header>
 
-          <div className="copilot-scroll" style={styles.body}>
+          <div ref={scrollRef} className="copilot-scroll" style={styles.body} onScroll={() => {
+            const value = scrollRef.current?.scrollTop;
+            if (typeof value === 'number' && Number.isFinite(value)) scrollTopRef.current = Math.max(0, value);
+          }}>
             <div style={styles.contextPill}><span style={{ ...styles.statusDot, background: hasObject ? '#5ee6a8' : '#9aa4b2' }} />{objectLabel}</div>
             {messages.length === 0 && !error && (
               <section style={styles.welcome}>

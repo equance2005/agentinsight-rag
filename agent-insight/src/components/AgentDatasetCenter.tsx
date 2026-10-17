@@ -258,6 +258,13 @@ export default function AgentDatasetCenter() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [tableActionError, setTableActionError] = useState('');
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent('agent-insight:copilot-context', {
+      detail: { pageType: 'dataset', objectType: 'unknown' },
+    }));
+  }, []);
+
   const loadDatasets = useCallback(
     async (opts?: { isRefresh?: boolean }): Promise<AgentDatasetListItem[]> => {
       if (!user) return [];
