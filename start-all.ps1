@@ -42,7 +42,12 @@ if (-not $wsl) {
     throw 'wsl.exe was not found. Install WSL or start Agent Insight manually from Ubuntu/WSL.'
 }
 
-$agentWslDir = (& $wsl.Source wslpath -a -u $agentDir).Trim()
+$wslExe = if ($wsl.Path) { $wsl.Path } else { 'wsl.exe' }
+$wslPathOutput = @(& $wslExe -e wslpath -a -u -- $agentDir 2>$null)
+if ($LASTEXITCODE -ne 0) {
+    throw "Could not convert Agent Insight path for WSL: $agentDir"
+}
+$agentWslDir = ($wslPathOutput -join "`n").Trim()
 if (-not $agentWslDir) {
     throw "Could not convert Agent Insight path for WSL: $agentDir"
 }
