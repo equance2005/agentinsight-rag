@@ -47,7 +47,7 @@ type ModelOption = ModelConfig & {
 };
 type Preview = {
   previewId: string;
-  action: 'trace_to_dataset' | 'evaluator_draft' | 'run_filter';
+  action: 'trace_to_dataset' | 'evaluator_draft' | 'run_filter' | 'dataset_delete' | 'experiment_start' | 'skill_publish';
   target: string;
   changes: Record<string, unknown>;
   sources: Source[];
@@ -313,7 +313,20 @@ export default function CopilotDrawer() {
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(String(payload.error || '无法生成工作流草稿'));
-      setPreview(payload.preview || null);
+      const nextPreview = payload.preview as Preview | null;
+      if (action === 'evaluator_draft' && nextPreview) {
+        const confirmResponse = await fetch('/api/copilot/workflows/confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, confirmationToken: nextPreview.confirmationToken, input: {} }),
+        });
+        const confirmPayload = await confirmResponse.json().catch(() => ({}));
+        if (!confirmResponse.ok) throw new Error(String(confirmPayload.error || '评估器草稿创建失败'));
+        setMessages(current => [...current, { role: 'assistant', content: `评估器草稿已创建：${nextPreview.target}` }]);
+        setPreview(null);
+      } else {
+        setPreview(nextPreview);
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : '无法生成工作流草稿');
     } finally {
@@ -404,7 +417,7 @@ export default function CopilotDrawer() {
                 {showTraceSteps && traceSteps.map(source => <a href={source.href || '#'} key={source.id} style={styles.source}><FileText size={14} /><span>{source.label}</span><span style={styles.sourceLocator}>{source.locator}</span></a>)}
               </section>;
             })()}
-            {preview && <section style={styles.preview}><div style={styles.sectionLabel}>工作流草稿 · {preview.target}</div><pre style={styles.previewJson}>{JSON.stringify(preview.changes, null, 2)}</pre>{preview.missing.length > 0 && <div style={styles.missing}>还缺少：{preview.missing.join('、')}</div>}<div style={styles.previewActions}><button type="button" onClick={() => setPreview(null)} style={styles.secondaryButton}>取消</button><button type="button" disabled={busy || preview.missing.length > 0} onClick={confirmPreview} style={styles.primaryButton}>确认写入</button></div></section>}
+            {preview && <section style={styles.preview}><div style={styles.sectionLabel}>工作流草稿 · {preview.target}</div><pre style={styles.previewJson}>{JSON.stringify(preview.changes, null, 2)}</pre>{preview.missing.length > 0 && <div style={styles.missing}>还缺少：{preview.missing.join('、')}</div>}<div style={styles.previewActions}><button type="button" onClick={() => setPreview(null)} style={styles.secondaryButton}>取消</button><button type="button" disabled={busy} onClick={confirmPreview} style={styles.primaryButton}>{preview.action === 'dataset_delete' ? '确认删除' : preview.action === 'experiment_start' ? '确认启动' : preview.action === 'skill_publish' ? '确认发布' : '确认写入'}</button></div></section>}
           </div>
 
           <footer style={styles.footer}>

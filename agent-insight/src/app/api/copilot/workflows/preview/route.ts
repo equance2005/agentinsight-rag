@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { resolveUser } from '@/lib/auth/auth';
 import { contextSchema, workflowInputSchema, type CopilotContextEnvelope } from '@/lib/copilot/contracts';
 import { loadCopilotContext } from '@/lib/copilot/context';
-import { buildEvaluatorPreview, buildRunFilterPreview, buildTraceDatasetPreview } from '@/lib/copilot/workflows';
+import { buildDatasetDeletePreview, buildEvaluatorPreview, buildExperimentStartPreview, buildRunFilterPreview, buildSkillPublishPreview, buildTraceDatasetPreview } from '@/lib/copilot/workflows';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +18,10 @@ export async function POST(request: Request) {
     if (action === 'trace_to_dataset') return NextResponse.json({ preview: buildTraceDatasetPreview(loaded, input) });
     if (action === 'evaluator_draft') return NextResponse.json({ preview: buildEvaluatorPreview(loaded, input) });
     if (action === 'run_filter') return NextResponse.json({ preview: await buildRunFilterPreview(loaded, input) });
-    return NextResponse.json({ error: '当前只支持 Trace 样例和评估器草稿' }, { status: 400 });
+    if (action === 'dataset_delete') return NextResponse.json({ preview: await buildDatasetDeletePreview(loaded, input) });
+    if (action === 'experiment_start') return NextResponse.json({ preview: await buildExperimentStartPreview(loaded, input) });
+    if (action === 'skill_publish') return NextResponse.json({ preview: await buildSkillPublishPreview(loaded, input) });
+    return NextResponse.json({ error: '不支持的 Copilot 工作流动作' }, { status: 400 });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : '预览失败' }, { status: 400 });
   }

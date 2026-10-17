@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { resolveUser } from '@/lib/auth/auth';
 import { workflowInputSchema } from '@/lib/copilot/contracts';
-import { confirmEvaluatorDraft, confirmTraceDataset } from '@/lib/copilot/workflows';
+import { confirmDatasetDelete, confirmEvaluatorDraft, confirmExperimentStart, confirmSkillPublish, confirmTraceDataset } from '@/lib/copilot/workflows';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +15,13 @@ export async function POST(request: Request) {
     const action = String(body.action || 'trace_to_dataset');
     const result = action === 'evaluator_draft'
       ? await confirmEvaluatorDraft(auth.username, confirmationToken)
-      : await confirmTraceDataset(auth.username, confirmationToken, workflowInputSchema.parse(body.input || {}));
+      : action === 'dataset_delete'
+        ? await confirmDatasetDelete(auth.username, confirmationToken)
+        : action === 'experiment_start'
+          ? await confirmExperimentStart(auth.username, confirmationToken)
+          : action === 'skill_publish'
+            ? await confirmSkillPublish(auth.username, confirmationToken)
+            : await confirmTraceDataset(auth.username, confirmationToken, workflowInputSchema.parse(body.input || {}));
     return NextResponse.json({ success: true, ...result });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : '确认执行失败' }, { status: 400 });

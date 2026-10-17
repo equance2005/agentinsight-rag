@@ -1,8 +1,11 @@
 import { createHmac, randomUUID } from 'node:crypto';
-import { createAgentDatasetRecord, findAgentDataset, normalizeCase, updateAgentDatasetRecord, type AgentDatasetRecord, type DatasetField } from '@/server/agent_datasets_storage';
+import { createAgentDatasetRecord, deleteAgentDataset, findAgentDataset, normalizeCase, updateAgentDatasetRecord, type AgentDatasetRecord, type DatasetField } from '@/server/agent_datasets_storage';
 import { readUserCustomEvaluators, writeUserCustomEvaluators } from '@/server/user_evaluators_storage';
 import { syncCustomEvaluatorRegisteredAgents } from '@/lib/engine/evaluation/custom-llm-evaluator';
 import { db } from '@/lib/storage/prisma';
+import { prismaRaw } from '@/lib/storage/prisma';
+import { startExperimentRun } from '@/lib/engine/experiment/run-experiment';
+import { publishWorkbenchSnapshot, publishOptimizationCandidate } from '@/lib/skill-workbench/publish-service';
 import type { CopilotContextResult, WorkflowInput, WorkflowPreview } from './contracts';
 
 const PREVIEW_TTL_MS = 10 * 60 * 1000;
@@ -113,7 +116,7 @@ export function buildEvaluatorPreview(context: CopilotContextResult, input: Work
   return {
     previewId, action: 'evaluator_draft', target: input.evaluatorName.trim(), changes,
     sources: context.sources.map(({ content: _content, ...source }) => source),
-    missing: ['评估器草稿需要用户确认评分标准与输入字段'], expiresAt: new Date(expiresAt).toISOString(), confirmationToken,
+    missing: [], expiresAt: new Date(expiresAt).toISOString(), confirmationToken,
   };
 }
 
@@ -152,4 +155,100 @@ export async function buildRunFilterPreview(context: CopilotContextResult, input
   const previewId = randomUUID();
   const confirmationToken = token({ previewId, user: context.envelope.user, action: 'run_filter', expiresAt, changes });
   return { previewId, action: 'run_filter', target: '运行列表', changes, sources: [], missing: [], expiresAt: new Date(expiresAt).toISOString(), confirmationToken };
+}
+
+export async function buildDatasetDeletePreview(context: CopilotContextResult, input: WorkflowInput): Promise<WorkflowPreview> {
+  const datasetId = String(input.datasetId || context.envelope.objectId || '').trim();
+  if (!datasetId) throw new Error('请先选择要删除的数据集');
+  const dataset = await findAgentDataset(context.envelope.user, datasetId);
+  if (!dataset) throw new Error('数据集不存在或无权访问');
+  const expiresAt = Date.now() + PREVIEW_TTL_MS;
+  const changes = { datasetId: dataset.id, name: dataset.name, caseCount: dataset.cases.length, destructive: true };
+  const previewId = randomUUID();
+  const confirmationToken = token({ previewId, user: context.envelope.user, action: 'dataset_delete', expiresAt, changes });
+  return {
+    previewId, action: 'dataset_delete', target: dataset.name, changes,
+    sources: [{ id: dataset.id, kind: 'dataset', label: `Dataset ${dataset.name}`, locator: `dataset:${dataset.id}`, href: '/dataset' }],
+    missing: ['删除数据集及其样例后不可恢复，请确认后继续'], expiresAt: new Date(expiresAt).toISOString(), confirmationToken,
+  };
+}
+
+export async function confirmDatasetDelete(user: string, previewToken: string): Promise<{ datasetId: string; deleted: boolean }> {
+  const payload = decode(previewToken);
+  if (payload.user !== user || payload.action !== 'dataset_delete') throw new Error('确认令牌与当前用户或操作不匹配');
+  const changes = payload.changes as { datasetId?: string };
+  const datasetId = String(changes.datasetId || '').trim();
+  if (!datasetId) throw new Error('确认令牌缺少数据集 ID');
+  return { datasetId, deleted: await deleteAgentDataset(user, datasetId) };
+}
+
+export async function buildExperimentStartPreview(context: CopilotContextResult, input: WorkflowInput): Promise<WorkflowPreview> {
+  const experimentId = String(input.experimentId || context.envelope.objectId || '').trim();
+  if (!experimentId) throw new Error('请先选择要启动的实验');
+  const experiment = await (prismaRaw as any).experiment.findFirst({
+    where: { id: experimentId, user: context.envelope.user },
+    include: { _count: { select: { cases: { where: { deletedAt: null } } } } },
+  });
+  if (!experiment) throw new Error('实验不存在或无权访问');
+  const evaluatorIds = (() => { try { const value = JSON.parse(experiment.evaluatorIdsJson || '[]'); return Array.isArray(value) ? value : []; } catch { return []; } })();
+  const expiresAt = Date.now() + PREVIEW_TTL_MS;
+  const changes = {
+    experimentId: experiment.id,
+    name: experiment.name,
+    status: experiment.status,
+    agentName: experiment.agentName,
+    caseCount: experiment._count.cases,
+    evaluatorIds,
+    requiresConfirmation: true,
+  };
+  const previewId = randomUUID();
+  const confirmationToken = token({ previewId, user: context.envelope.user, action: 'experiment_start', expiresAt, changes });
+  return {
+    previewId, action: 'experiment_start', target: experiment.name, changes,
+    sources: [{ id: experiment.id, kind: 'evaluation', label: `实验 ${experiment.name}`, locator: `experiment:${experiment.id}`, href: `/experiments/${encodeURIComponent(experiment.id)}` }],
+    missing: experiment.status === 'running' ? ['实验已经在运行中'] : [],
+    expiresAt: new Date(expiresAt).toISOString(), confirmationToken,
+  };
+}
+
+export async function confirmExperimentStart(user: string, previewToken: string): Promise<{ experimentId: string; status: string; alreadyRunning?: boolean }> {
+  const payload = decode(previewToken);
+  if (payload.user !== user || payload.action !== 'experiment_start') throw new Error('确认令牌与当前用户或操作不匹配');
+  const experimentId = String((payload.changes as { experimentId?: string }).experimentId || '').trim();
+  if (!experimentId) throw new Error('确认令牌缺少实验 ID');
+  const result = await startExperimentRun(experimentId, user);
+  if (!result) throw new Error('实验不存在或无权访问');
+  return { experimentId, status: result.status, ...(result.alreadyRunning ? { alreadyRunning: true } : {}) };
+}
+
+export async function buildSkillPublishPreview(context: CopilotContextResult, input: WorkflowInput): Promise<WorkflowPreview> {
+  const sessionId = String(input.sessionId || context.envelope.sessionId || '').trim();
+  const recordId = String(input.recordId || '').trim();
+  const skillName = String(input.skillName || '').trim();
+  if (!sessionId && !recordId) throw new Error('请先选择要发布的 Skill 工作会话或优化候选');
+  const changes = recordId
+    ? { kind: 'optimization', recordId, skillName, confirmed: true }
+    : { kind: 'workbench', sessionId, confirmed: true };
+  const expiresAt = Date.now() + PREVIEW_TTL_MS;
+  const previewId = randomUUID();
+  const confirmationToken = token({ previewId, user: context.envelope.user, action: 'skill_publish', expiresAt, changes });
+  return {
+    previewId, action: 'skill_publish', target: skillName || '当前 Skill', changes,
+    sources: context.sources.map(({ content: _content, ...source }) => source),
+    missing: ['发布前必须通过静态质量门禁，并确认版本变更'], expiresAt: new Date(expiresAt).toISOString(), confirmationToken,
+  };
+}
+
+export async function confirmSkillPublish(user: string, previewToken: string): Promise<{ skillName?: string; version: number; kind: string }> {
+  const payload = decode(previewToken);
+  if (payload.user !== user || payload.action !== 'skill_publish') throw new Error('确认令牌与当前用户或操作不匹配');
+  const changes = payload.changes as { kind?: string; sessionId?: string; recordId?: string; skillName?: string };
+  if (changes.kind === 'optimization') {
+    if (!changes.recordId || !changes.skillName) throw new Error('优化候选发布信息不完整');
+    const result = await publishOptimizationCandidate({ user, skillName: changes.skillName, recordId: changes.recordId, confirmed: true });
+    return { skillName: result.skill.name, version: result.version.version, kind: 'optimization' };
+  }
+  if (!changes.sessionId) throw new Error('Skill 工作会话 ID 不存在');
+  const result = await publishWorkbenchSnapshot({ user, sessionId: changes.sessionId, confirmed: true });
+  return { skillName: result.skill.name, version: result.version.version, kind: 'workbench' };
 }

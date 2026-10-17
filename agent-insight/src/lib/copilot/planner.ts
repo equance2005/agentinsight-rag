@@ -39,14 +39,35 @@ export function buildCopilotPlan(message: string, route: CopilotRoute, context: 
   if (route.action === 'evaluator_draft') {
     return plan('创建一个可编辑的评估器草稿', [
       { title: hasContext ? '读取当前对象和可用评估上下文' : '读取当前用户的评估配置', tool: 'get_evaluation_context', kind: 'read' },
-      { title: '生成评估器名称、评分标准和提示词草稿', tool: 'create_evaluator_preview', kind: 'write', dependsOn: ['1'], requiresConfirmation: true },
-      { title: '确认后保存评估器', tool: 'confirm_evaluator_draft', kind: 'write', dependsOn: ['2'], requiresConfirmation: true },
+      { title: '生成并保存评估器草稿', tool: 'create_evaluator_draft', kind: 'write', dependsOn: ['1'] },
     ]);
   }
   if (route.action === 'run_filter') {
     return plan('按条件查找运行记录', [
       { title: '读取当前用户的运行记录', tool: 'list_executions', kind: 'read' },
       { title: '应用筛选条件并返回匹配结果', tool: 'filter_executions', kind: 'analyze', dependsOn: ['1'] },
+    ]);
+  }
+  if (route.action === 'dataset_delete') {
+    return plan('删除当前数据集', [
+      { title: '读取数据集名称、样例数量和归属', tool: 'get_dataset_context', kind: 'read' },
+      { title: '展示删除影响范围和确认提示', tool: 'preview_dataset_delete', kind: 'write', dependsOn: ['1'], requiresConfirmation: true },
+      { title: '确认后删除数据集', tool: 'delete_dataset', kind: 'write', dependsOn: ['2'], requiresConfirmation: true },
+    ]);
+  }
+  if (route.action === 'experiment_start') {
+    return plan('启动当前实验', [
+      { title: '读取实验、Case 和评估器冻结配置', tool: 'get_experiment_config', kind: 'read' },
+      { title: '展示执行范围、模型和评估器配置', tool: 'preview_experiment_start', kind: 'analyze', dependsOn: ['1'], requiresConfirmation: true },
+      { title: '确认后启动实验运行', tool: 'start_experiment', kind: 'write', dependsOn: ['2'], requiresConfirmation: true },
+    ]);
+  }
+  if (route.action === 'skill_publish') {
+    return plan('发布当前 Skill 版本', [
+      { title: '读取工作快照、基线版本和质量评估', tool: 'get_skill_publish_context', kind: 'read' },
+      { title: '检查静态质量门禁和版本冲突', tool: 'validate_skill_quality_gate', kind: 'analyze', dependsOn: ['1'] },
+      { title: '展示版本变更和发布影响', tool: 'preview_skill_publish', kind: 'analyze', dependsOn: ['2'], requiresConfirmation: true },
+      { title: '确认后发布 Skill 新版本', tool: 'publish_skill', kind: 'write', dependsOn: ['3'], requiresConfirmation: true },
     ]);
   }
   if (route.intent === 'context_analysis') {

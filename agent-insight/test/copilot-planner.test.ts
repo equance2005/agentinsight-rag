@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { buildCopilotPlan } from '../src/lib/copilot/planner';
-import type { CopilotContextResult } from '../src/lib/copilot/contracts';
+import { classifyIntent, type CopilotContextResult } from '../src/lib/copilot/contracts';
 
 const context: CopilotContextResult = {
   envelope: { user: 'alice', pageType: 'trace', objectType: 'execution', objectId: 'exec-1' },
@@ -30,4 +30,14 @@ test('Copilot planner keeps knowledge questions read-only', () => {
   const plan = buildCopilotPlan('端口是多少？', { intent: 'knowledge', reason: 'test' }, { ...context, sources: [] });
   assert.equal(plan.requiresConfirmation, false);
   assert.deepEqual(plan.steps.map(step => step.kind), ['read', 'analyze']);
+});
+
+test('Copilot routes destructive and gated operations to confirmation workflows', () => {
+  assert.equal(classifyIntent('删除这个数据集', true).action, 'dataset_delete');
+  assert.equal(classifyIntent('启动这个实验', true).action, 'experiment_start');
+  assert.equal(classifyIntent('发布当前 Skill', true).action, 'skill_publish');
+
+  const publish = buildCopilotPlan('发布当前 Skill', { intent: 'workflow_draft', action: 'skill_publish', reason: 'test' }, context);
+  assert.equal(publish.requiresConfirmation, true);
+  assert.equal(publish.steps.at(-1)?.tool, 'publish_skill');
 });
