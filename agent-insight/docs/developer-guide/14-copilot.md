@@ -27,7 +27,7 @@ Trace 交互限制为首尾窗口，超出部分在 `missing` 中声明；敏感
 
 ## 工作流确认
 
-`src/lib/copilot/planner.ts` 根据意图生成有限步骤计划：知识问答、Trace 查询、当前对象分析、Dataset 创建/Trace 回流、Evaluator 草稿和运行筛选分别映射到只读工具、分析工具或确认式写工具。Trace 查询只返回匹配的运行摘要，不进入确认路由。计划是 UI 和模型之间的执行摘要，不替代领域 API；领域 API 仍负责鉴权、参数校验、幂等和最终写入。
+`src/lib/copilot/planner.ts` 根据意图生成有限步骤计划：知识问答、Trace 查询、当前对象分析、Dataset 创建/Trace 回流、Evaluator 草稿、Skill 修改建议和运行筛选分别映射到只读工具、分析工具或确认式写工具。Trace 查询只返回匹配的运行摘要，不进入确认路由；Skill 修改建议只生成候选，不直接改正式版本。计划是 UI 和模型之间的执行摘要，不替代领域 API；领域 API 仍负责鉴权、参数校验、幂等和最终写入。
 
 跨模块计划持久化在 `CopilotRun` / `CopilotRunStep`，状态只允许 `pending`、`in_progress`、`done`、`blocked`；模型不保存原始思维链，只保存步骤标题、工具名、依赖和结果摘要。复杂 Trace 诊断走 `src/lib/copilot/react.ts` 的有界只读循环，最多 4 步并在建议之后停在人工确认点。
 
