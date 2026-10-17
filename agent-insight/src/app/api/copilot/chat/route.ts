@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '图片总大小不能超过 10MB' }, { status: 413 });
     }
     const rawContext = body.context && typeof body.context === 'object' ? body.context : {};
-    const context: CopilotContextEnvelope = contextSchema.parse({ ...rawContext, user }) as CopilotContextEnvelope;
+    const context: CopilotContextEnvelope = { ...contextSchema.parse(rawContext), user } as CopilotContextEnvelope;
     if (isTraceDiagnosisRequest(message, context)) {
       const diagnosis = await runBoundedTraceDiagnosis({ user, message, context, images, modelConfigId });
       return NextResponse.json({

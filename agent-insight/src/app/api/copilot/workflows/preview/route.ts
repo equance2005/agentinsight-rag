@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     const auth = await resolveUser(request, typeof body.user === 'string' ? body.user : undefined);
     if (!auth.username) return NextResponse.json({ error: '请先登录 Agent Insight 后再使用 Copilot' }, { status: 401 });
     const action = String(body.action || '');
-    const context = contextSchema.parse({ ...(body.context || {}), user: auth.username }) as CopilotContextEnvelope;
+    const context = { ...contextSchema.parse(body.context || {}), user: auth.username } as CopilotContextEnvelope;
     const loaded = await loadCopilotContext(context);
     const input = workflowInputSchema.parse(body.input || {});
     if (action === 'trace_to_dataset') return NextResponse.json({ preview: buildTraceDatasetPreview(loaded, input) });
