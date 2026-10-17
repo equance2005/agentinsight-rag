@@ -4,6 +4,8 @@ import { loadCopilotContext, routeCopilotIntent, type CopilotContextEnvelope } f
 import { completeCopilot, CopilotModelError, type CopilotImage } from '@/lib/copilot/model';
 import { searchRagKnowledge } from '@/lib/copilot/rag';
 import { buildCopilotPlan } from '@/lib/copilot/planner';
+import { isTraceDiagnosisRequest, runBoundedTraceDiagnosis } from '@/lib/copilot/react';
+import { createCopilotRun } from '@/lib/copilot/run-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,12 +30,23 @@ export async function POST(request: Request) {
     }
     const rawContext = body.context && typeof body.context === 'object' ? body.context : {};
     const context: CopilotContextEnvelope = { ...rawContext, user };
+    if (isTraceDiagnosisRequest(message, context)) {
+      const diagnosis = await runBoundedTraceDiagnosis({ user, message, context, images, modelConfigId });
+      return NextResponse.json({
+        answer: diagnosis.answer,
+        route: { intent: 'context_analysis', action: undefined, pageType: context.pageType, objectType: context.objectType },
+        react: diagnosis,
+        sources: diagnosis.sources,
+        missing: diagnosis.missing,
+      });
+    }
     const [loaded, rag] = await Promise.all([
       loadCopilotContext(context),
       searchRagKnowledge(message),
     ]);
     const intent = routeCopilotIntent(message, loaded);
     const plan = buildCopilotPlan(message, intent, loaded);
+    const run = await createCopilotRun(user, plan);
     const allSources = [...loaded.sources, ...rag.sources];
     const evidence = allSources.map(source => `SOURCE ${source.id} (${source.label}) [${source.locator}]\n${source.content}`).join('\n\n---\n\n');
     const system = [
@@ -50,6 +63,7 @@ export async function POST(request: Request) {
       answer,
       route: { intent, pageType: context.pageType, objectType: context.objectType },
       plan,
+      run,
       sources: allSources.map(source => ({ id: source.id, kind: source.kind, label: source.label, locator: source.locator, href: source.href })),
       missing: [...loaded.missing, ...rag.missing],
     });

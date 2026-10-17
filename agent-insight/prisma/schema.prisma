@@ -604,6 +604,45 @@ model SkillWorkbenchTask {
   @@index([sessionId, status, updatedAt])
 }
 
+/// Copilot 跨模块编排任务。只保存结构化计划和执行摘要，不保存模型原始思维链。
+model CopilotRun {
+  id           String             @id @default(cuid())
+  user         String
+  goal         String
+  status       String             @default("pending") // pending|running|awaiting_confirmation|done|blocked|failed
+  planJson     String             @default("{}")
+  resultJson   String?
+  errorMessage String?
+  steps        CopilotRunStep[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([user, updatedAt])
+  @@index([user, status, updatedAt])
+}
+
+model CopilotRunStep {
+  id                   String     @id @default(cuid())
+  runId                String
+  run                  CopilotRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  stepKey              String
+  ordinal              Int
+  title                String
+  tool                 String
+  kind                 String
+  status               String     @default("pending") // pending|in_progress|done|blocked
+  dependsOnJson        String     @default("[]")
+  requiresConfirmation Boolean    @default(false)
+  resultJson           String?
+  errorMessage         String?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+
+  @@unique([runId, stepKey])
+  @@index([runId, ordinal])
+  @@index([runId, status])
+}
+
 /// 一次优化从证据到候选、复测和发布的完整记录。
 /// 候选文件在发布前不写 SkillVersion，避免未验证内容进入正式版本历史。
 model SkillOptimizationRecord {

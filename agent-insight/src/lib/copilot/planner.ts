@@ -70,6 +70,17 @@ export function buildCopilotPlan(message: string, route: CopilotRoute, context: 
       { title: '确认后发布 Skill 新版本', tool: 'publish_skill', kind: 'write', dependsOn: ['3'], requiresConfirmation: true },
     ]);
   }
+  if (route.intent === 'workflow_draft' && /全流程|闭环|回归实验|端到端|end.?to.?end|regression/i.test(message)) {
+    return plan('完成 Trace 到回归实验的跨模块闭环', [
+      { title: '读取当前 Trace 和失败证据', tool: 'get_trace_context', kind: 'read' },
+      { title: '创建或更新评测数据集样例', tool: 'create_dataset_case_preview', kind: 'write', dependsOn: ['1'], requiresConfirmation: true },
+      { title: '创建评估器草稿', tool: 'create_evaluator_draft', kind: 'write', dependsOn: ['2'] },
+      { title: '展示实验配置并等待启动确认', tool: 'preview_experiment_start', kind: 'write', dependsOn: ['3'], requiresConfirmation: true },
+      { title: '分析实验结果', tool: 'analyze_experiment_result', kind: 'analyze', dependsOn: ['4'] },
+      { title: '生成 Skill 修改候选', tool: 'create_skill_candidate', kind: 'write', dependsOn: ['5'], requiresConfirmation: true },
+      { title: '发布候选并运行回归实验', tool: 'publish_and_regress_skill', kind: 'write', dependsOn: ['6'], requiresConfirmation: true },
+    ]);
+  }
   if (route.intent === 'context_analysis') {
     return plan('分析当前页面对象', [
       { title: '读取当前页面对象和关联证据', tool: 'get_page_context', kind: 'read' },

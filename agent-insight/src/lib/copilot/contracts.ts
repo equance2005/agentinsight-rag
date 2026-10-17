@@ -69,6 +69,7 @@ export function classifyIntent(message: string, hasContext: boolean): CopilotRou
   const deleteDataset = /(?:删除|delete).*(?:数据集|评测集|dataset)/i.test(text);
   const startExperiment = /(?:启动|运行|开始|start|run).*(?:实验|评测|experiment)/i.test(text);
   const publishSkill = /(?:发布|publish).*(?:skill|技能)/i.test(text);
+  const lifecycle = /(?:全流程|闭环|回归实验|端到端|end.?to.?end|regression)/i.test(text);
   const filter = /筛选|查找.*(?:运行|trace)|找出.*(?:运行|trace)|filter.*(?:run|trace)|find.*(?:run|trace)/i.test(text);
   const command = /创建|生成|起草|调整|修改|准备|帮.*(?:做|写)|create|draft|generate|update/i.test(text);
   const negated = /不要.*(?:创建|生成|修改)|不.*执行|do not|don't/i.test(text);
@@ -77,6 +78,7 @@ export function classifyIntent(message: string, hasContext: boolean): CopilotRou
   if (deleteDataset) return { intent: 'workflow_draft', action: 'dataset_delete', reason: '删除数据集属于破坏性操作，必须预览并确认' };
   if (startExperiment) return { intent: 'workflow_draft', action: 'experiment_start', reason: '启动实验前展示冻结配置并等待确认' };
   if (publishSkill) return { intent: 'workflow_draft', action: 'skill_publish', reason: '发布 Skill 前必须通过质量门禁并等待确认' };
+  if (lifecycle) return { intent: 'workflow_draft', reason: '创建跨模块 TodoList，按依赖逐步执行并在写操作前确认' };
   if (filter) return { intent: 'workflow_draft', action: 'run_filter', reason: '执行可回查的只读运行筛选' };
   if (command && sample && evaluator) return { intent: 'clarify', reason: '请先选择创建样例或起草评估器中的一个操作' };
   if (command && sample) return { intent: hasContext ? 'workflow_draft' : 'clarify', action: 'trace_to_dataset', reason: '先准备 Trace 样例草稿，确认后保存' };

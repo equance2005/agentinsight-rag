@@ -276,7 +276,23 @@ export default function CopilotDrawer() {
       if (!response.ok) throw new Error(String(payload.error || 'Copilot 请求失败'));
       setMessages(current => [...current, { role: 'assistant', content: String(payload.answer || '没有生成可用回答。') }]);
       setSources(Array.isArray(payload.sources) ? payload.sources : []);
-      setPlan(payload.plan && Array.isArray(payload.plan.steps) ? payload.plan as CopilotPlan : null);
+      setPlan(payload.plan && Array.isArray(payload.plan.steps)
+        ? payload.plan as CopilotPlan
+        : payload.react && Array.isArray(payload.react.steps)
+          ? {
+              id: `react-${Date.now()}`,
+              goal: '有界 Trace 诊断循环',
+              requiresConfirmation: true,
+              steps: payload.react.steps.map((step: { id: string; tool: string; summary: string; status: string }) => ({
+                id: step.id,
+                title: step.summary,
+                tool: step.tool,
+                kind: 'analyze' as const,
+                status: step.status === 'done' ? 'done' as const : 'blocked' as const,
+                requiresConfirmation: false,
+              })),
+            }
+          : null);
       setShowTraceSteps(false);
     } catch (cause) {
       if (cause instanceof DOMException && cause.name === 'AbortError') return;
