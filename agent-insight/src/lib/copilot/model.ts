@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { getActiveConfig } from '@/lib/storage/server-config';
+import { getUserSettings } from '@/lib/storage/server-config';
 import { getOpenAICompatibleClientConfig, isModelConnectionReady } from '@/lib/shared/model-connection';
 
 export class CopilotModelError extends Error {
@@ -13,13 +13,16 @@ export class CopilotModelError extends Error {
 
 export type CopilotImage = { dataUrl: string; mimeType: string; name?: string };
 
-export async function copilotModel(user: string) {
-  const config = await getActiveConfig(user);
+export async function copilotModel(user: string, modelConfigId?: string) {
+  const settings = await getUserSettings(user);
+  const config = (modelConfigId
+    ? settings.configs.find(item => item.id === modelConfigId)
+    : undefined) ?? settings.configs.find(item => item.id === settings.activeConfigId);
   if (!config || !isModelConnectionReady(config) || !config.model) throw new CopilotModelError('请先在模型注册页面配置可用模型', 400);
   return { client: new OpenAI({ ...getOpenAICompatibleClientConfig(config), timeout: 90_000, maxRetries: 1 }), model: config.model };
 }
-export async function completeCopilot(user: string, system: string, prompt: string, images: CopilotImage[] = [], signal?: AbortSignal) {
-  const { client, model } = await copilotModel(user);
+export async function completeCopilot(user: string, system: string, prompt: string, images: CopilotImage[] = [], signal?: AbortSignal, modelConfigId?: string) {
+  const { client, model } = await copilotModel(user, modelConfigId);
   const content = [
     { type: 'text' as const, text: prompt },
     ...images.map(image => ({ type: 'image_url' as const, image_url: { url: image.dataUrl } })),

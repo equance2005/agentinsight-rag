@@ -3,6 +3,7 @@ import { resolveUser } from '@/lib/auth/auth';
 import { loadCopilotContext, routeCopilotIntent, type CopilotContextEnvelope } from '@/lib/copilot/context';
 import { completeCopilot, CopilotModelError, type CopilotImage } from '@/lib/copilot/model';
 import { searchRagKnowledge } from '@/lib/copilot/rag';
+import { buildCopilotPlan } from '@/lib/copilot/planner';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +15,9 @@ export async function POST(request: Request) {
     if (!user) return NextResponse.json({ error: '请先登录 Agent Insight 后再使用 Copilot' }, { status: 401 });
     const message = String(body.message || '').trim();
     if (!message) return NextResponse.json({ error: 'message is required' }, { status: 400 });
+    const modelConfigId = typeof body.modelConfigId === 'string' && body.modelConfigId.trim()
+      ? body.modelConfigId.trim()
+      : undefined;
     const images = Array.isArray(body.images) ? body.images.filter((item: unknown): item is CopilotImage => {
       if (!item || typeof item !== 'object') return false;
       const value = item as Record<string, unknown>;
@@ -29,6 +33,7 @@ export async function POST(request: Request) {
       searchRagKnowledge(message),
     ]);
     const intent = routeCopilotIntent(message, loaded);
+    const plan = buildCopilotPlan(message, intent, loaded);
     const allSources = [...loaded.sources, ...rag.sources];
     const evidence = allSources.map(source => `SOURCE ${source.id} (${source.label}) [${source.locator}]\n${source.content}`).join('\n\n---\n\n');
     const system = [
@@ -36,13 +41,15 @@ export async function POST(request: Request) {
       '必须区分页面事实、模型推断和建议。只根据提供的证据块回答；没有证据就明确说未知。',
       '不要声称已经执行任何写入。工作流请求只输出草稿、来源和待补充字段。',
       `当前意图：${intent}`,
+      `执行计划（只可按现有工具和页面证据解释；写操作必须先经过预览和用户确认）：${JSON.stringify(plan)}`,
       [...loaded.missing, ...rag.missing].length ? `已知缺失：${[...loaded.missing, ...rag.missing].join('；')}` : '',
       evidence ? `证据块：\n${evidence}` : '当前没有页面证据。',
     ].filter(Boolean).join('\n\n');
-    const answer = await completeCopilot(user, system, message, images);
+    const answer = await completeCopilot(user, system, message, images, undefined, modelConfigId);
     return NextResponse.json({
       answer,
       route: { intent, pageType: context.pageType, objectType: context.objectType },
+      plan,
       sources: allSources.map(source => ({ id: source.id, kind: source.kind, label: source.label, locator: source.locator, href: source.href })),
       missing: [...loaded.missing, ...rag.missing],
     });

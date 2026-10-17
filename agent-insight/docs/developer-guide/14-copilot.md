@@ -2,7 +2,7 @@
 
 ## API
 
-- `POST /api/copilot/chat`：加载当前上下文，执行意图路由并返回带来源的回答。请求应携带 `x-witty-api-key` 或登录用户；可选 `images` 数组传入最多 4 个 `data:image/{png|jpeg|webp|gif};base64,...` 图片上下文。
+- `POST /api/copilot/chat`：加载当前上下文，执行意图路由，返回带来源的回答和结构化 `plan`。`plan.steps` 只描述读取、分析和待确认写操作；它不直接写入存储。请求应携带 `x-witty-api-key` 或登录用户；可选 `images` 数组传入最多 4 个 `data:image/{png|jpeg|webp|gif};base64,...` 图片上下文。
 - `POST /api/copilot/workflows/preview`：只生成工作流草稿，不写入数据。
 - `POST /api/copilot/workflows/confirm`：校验短时确认令牌后调用现有 Dataset/Evaluator 写入存储。
 
@@ -24,5 +24,7 @@ RAG 证据桥接位于 `src/lib/copilot/rag.ts`。它调用 `POST {AGENT_INSIGHT
 Trace 交互限制为首尾窗口，超出部分在 `missing` 中声明；敏感值使用轨迹事实层的脱敏函数处理。
 
 ## 工作流确认
+
+`src/lib/copilot/planner.ts` 根据意图生成有限步骤计划：知识问答、当前对象分析、Trace 回流 Dataset、Evaluator 草稿和运行筛选分别映射到只读工具、分析工具或确认式写工具。计划是 UI 和模型之间的执行摘要，不替代领域 API；领域 API 仍负责鉴权、参数校验、幂等和最终写入。
 
 预览令牌绑定 `user`、操作和草稿内容，并在十分钟后过期。Trace→Dataset 保存复用 `agent_datasets_storage`；Evaluator 草稿复用 `user_evaluators_storage` 和自动注册逻辑。重复确认按 Trace 来源或评估器名称幂等处理。

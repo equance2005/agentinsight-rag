@@ -20,6 +20,23 @@ export interface CopilotContextResult {
 export type WorkflowAction = 'trace_to_dataset' | 'evaluator_draft' | 'run_filter';
 export type CopilotIntent = 'knowledge' | 'context_analysis' | 'how_to' | 'workflow_draft' | 'clarify';
 export interface CopilotRoute { intent: CopilotIntent; action?: WorkflowAction; reason: string }
+export type CopilotPlanStepKind = 'read' | 'write' | 'analyze';
+export type CopilotPlanStepStatus = 'pending' | 'in_progress' | 'done' | 'blocked';
+export interface CopilotPlanStep {
+  id: string;
+  title: string;
+  tool: string;
+  kind: CopilotPlanStepKind;
+  status: CopilotPlanStepStatus;
+  dependsOn: string[];
+  requiresConfirmation: boolean;
+}
+export interface CopilotPlan {
+  id: string;
+  goal: string;
+  steps: CopilotPlanStep[];
+  requiresConfirmation: boolean;
+}
 export const workflowInputSchema = z.object({
   datasetId: z.string().max(240).optional(),
   datasetName: z.string().max(120).optional(),
