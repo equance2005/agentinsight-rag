@@ -43,7 +43,12 @@ if (-not $wsl) {
 }
 
 $wslExe = if ($wsl.Path) { $wsl.Path } else { 'wsl.exe' }
-$wslPathOutput = @(& $wslExe -e wslpath -a -u -- $agentDir 2>$null)
+$wslDistro = @(& $wslExe -l -q 2>$null) |
+    ForEach-Object { ($_ -replace "`0", '').Trim() } |
+    Where-Object { $_ -match '^Ubuntu(?:-[0-9]+(?:\.[0-9]+)?)?$' } |
+    Select-Object -First 1
+$wslDistroArgs = if ($wslDistro) { @('-d', $wslDistro) } else { @() }
+$wslPathOutput = @(& $wslExe @wslDistroArgs -e wslpath -a -u -- $agentDir 2>$null)
 if ($LASTEXITCODE -ne 0) {
     throw "Could not convert Agent Insight path for WSL: $agentDir"
 }
@@ -52,24 +57,14 @@ if (-not $agentWslDir) {
     throw "Could not convert Agent Insight path for WSL: $agentDir"
 }
 
-$forceInstall = $Install.IsPresent.ToString().ToLowerInvariant()
-$skipInstall = $SkipInstall.IsPresent.ToString().ToLowerInvariant()
-$agentCommand = @"
-set -e
-cd '$agentWslDir'
-if [ '$forceInstall' = 'true' ] || { [ '$skipInstall' != 'true' ] && [ ! -d node_modules ]; }; then
-  npm install
-fi
-npx prisma generate
-bash scripts/develop_start.sh
-"@.Trim()
+$forceInstall = if ([bool]$Install) { 'true' } else { 'false' }
+$skipInstallFlag = if ([bool]$SkipInstall) { 'true' } else { 'false' }
+$agentCommand = "set -e; cd '$agentWslDir'; if [ '$forceInstall' = 'true' ] || { [ '$skipInstallFlag' != 'true' ] && [ ! -d node_modules ]; }; then npm install; fi; if [ ! -d node_modules/lightningcss-linux-x64-gnu ] || [ ! -d node_modules/@tailwindcss/oxide-linux-x64-gnu ]; then if [ '$skipInstallFlag' = 'true' ]; then echo 'Linux native dependencies are missing; rerun without -SkipInstall.' >&2; exit 1; fi; npm install; fi; npx prisma generate; bash scripts/develop_start.sh; exec sleep infinity"
 
-$agentPowerShellCommand = "wsl.exe bash -lc $(ConvertTo-PowerShellLiteral $agentCommand)"
-Start-Process -FilePath 'powershell.exe' -ArgumentList @(
-    '-NoProfile',
-    '-ExecutionPolicy', 'Bypass',
-    '-NoExit',
-    '-Command', $agentPowerShellCommand
-)
+if ($wslDistro) {
+    Start-Process -FilePath $wslExe -ArgumentList @('-d', $wslDistro, 'bash', '-lc', $agentCommand)
+} else {
+    Start-Process -FilePath $wslExe -ArgumentList @('bash', '-lc', $agentCommand)
+}
 
 Write-Host 'Started RAG and Agent Insight in separate PowerShell windows.'
