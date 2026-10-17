@@ -101,8 +101,11 @@ export function stripDeliveryEventsFromTree(
   node: AgentNode,
   deliveryIds: Set<string>,
   deliveryTexts: Set<string> = new Set(),
+  visited = new Set<string>(),
 ): AgentNode {
   if (!deliveryIds.size && !deliveryTexts.size) return node
+  if (visited.has(node.id)) return { ...node, children: [] }
+  visited.add(node.id)
   return {
     ...node,
     events: node.events.filter((event) => {
@@ -120,7 +123,7 @@ export function stripDeliveryEventsFromTree(
       return true
     }),
     children: node.children.map((child) =>
-      stripDeliveryEventsFromTree(child, deliveryIds, deliveryTexts),
+      stripDeliveryEventsFromTree(child, deliveryIds, deliveryTexts, visited),
     ),
   }
 }
@@ -242,9 +245,12 @@ function injectMarkersOnce(
   remaining: Set<string>,
   isRoot: boolean,
   locale: "zh" | "en",
+  visited = new Set<string>(),
 ): AgentNode {
+  if (visited.has(node.id)) return { ...node, children: [] }
+  visited.add(node.id)
   const children = node.children.map((child) =>
-    injectMarkersOnce(child, markers, remaining, false, locale),
+    injectMarkersOnce(child, markers, remaining, false, locale, visited),
   )
 
   let events = [...node.events]

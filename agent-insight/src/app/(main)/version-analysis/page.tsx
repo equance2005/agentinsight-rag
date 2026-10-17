@@ -381,24 +381,39 @@ export default function VersionAnalysisPage() {
   }, [data, selectedVersionId]);
 
   useEffect(() => {
+    // Detail data is only needed by the detail view. Loading it while the
+    // comparison view is still visible causes every version-analysis page
+    // visit to issue a second, potentially expensive trace query.
+    if (activeView !== 'detail') {
+      return;
+    }
     if (!user || !selectedVersionId) {
       setDetails(null);
       return;
     }
     let alive = true;
+    const controller = new AbortController();
     setDetailLoading(true);
     const params = buildParams(false);
     params.set('limit', '100');
-    apiFetch(`/api/observe/version-analysis/tags/${encodeURIComponent(selectedVersionId)}/traces?${params.toString()}`)
+    apiFetch(`/api/observe/version-analysis/tags/${encodeURIComponent(selectedVersionId)}/traces?${params.toString()}`, { signal: controller.signal })
       .then(async res => {
         if (!res.ok) throw new Error(await readApiError(res, copy.detailFailed));
         return res.json();
       })
       .then(json => { if (alive) setDetails(json); })
-      .catch((error: any) => { if (alive) { toast.error(error?.message || copy.detailFailed); setDetails(null); } })
+      .catch((error: any) => {
+        if (alive && error?.name !== 'AbortError') {
+          toast.error(error?.message || copy.detailFailed);
+          setDetails(null);
+        }
+      })
       .finally(() => { if (alive) setDetailLoading(false); });
-    return () => { alive = false; };
-  }, [buildParams, copy.detailFailed, selectedVersionId, user]);
+    return () => {
+      alive = false;
+      controller.abort();
+    };
+  }, [activeView, buildParams, copy.detailFailed, selectedVersionId, user]);
 
   const agentOptions: SelectOption[] = useMemo(() => [
     { value: 'all', label: copy.allAgents },

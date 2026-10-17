@@ -608,11 +608,17 @@ function makeNode(init: {
 }
 
 function finalizeStats(node: AgentNode): void {
+    finalizeStatsSeen(node, new Set());
+}
+
+function finalizeStatsSeen(node: AgentNode, seen: Set<string>): void {
+    if (seen.has(node.id)) return;
+    seen.add(node.id);
     if (Number.isFinite(node.startedAt) && Number.isFinite(node.endedAt)) {
         const duration = (node.endedAt as number) - (node.startedAt as number);
         node.stats.durationMs = duration >= 0 ? duration : undefined;
     }
-    for (const c of node.children) finalizeStats(c);
+    for (const c of node.children) finalizeStatsSeen(c, seen);
 }
 
 function interactionToEvents(it: RawInteraction, idx: number): AgentEvent[] {
@@ -911,18 +917,30 @@ function summarizeToolCall(name: string, args: any): string {
 
 /** Walk the tree depth-first. */
 export function walkTree(root: AgentNode, fn: (n: AgentNode) => void): void {
-    fn(root);
-    for (const c of root.children) walkTree(c, fn);
+    const seen = new Set<string>();
+    const visit = (node: AgentNode) => {
+        if (seen.has(node.id)) return;
+        seen.add(node.id);
+        fn(node);
+        for (const child of node.children) visit(child);
+    };
+    visit(root);
 }
 
 /** Find a node by id. */
 export function findNode(root: AgentNode, id: string): AgentNode | null {
-    if (root.id === id) return root;
-    for (const c of root.children) {
-        const f = findNode(c, id);
-        if (f) return f;
-    }
-    return null;
+    const seen = new Set<string>();
+    const visit = (node: AgentNode): AgentNode | null => {
+        if (seen.has(node.id)) return null;
+        seen.add(node.id);
+        if (node.id === id) return node;
+        for (const child of node.children) {
+            const found = visit(child);
+            if (found) return found;
+        }
+        return null;
+    };
+    return visit(root);
 }
 
 /** Total descendant count (excluding root). */

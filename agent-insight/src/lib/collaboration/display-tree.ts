@@ -61,7 +61,10 @@ export function buildCollaborationTraceTree(interactions: RawInteraction[]): Age
         const position = anchor?.position ?? (anchor?.status === 'candidate' && anchor.candidates?.length === 1 ? anchor.candidates[0] : undefined);
         let parent = parentGroup.tree;
         let matched: AgentNode['events'][number] | undefined;
+        const visited = new Set<string>();
         const visit = (node: AgentNode) => {
+            if (visited.has(node.id)) return;
+            visited.add(node.id);
             const candidates = node.events.filter(event => event.interactionIndex === parentGroup.indices[position?.interactionIndex ?? -1] && event.kind !== 'llm' && event.kind !== 'user');
             const recordId = anchor?.matchedRecord?.recordId ?? (anchor?.status === 'candidate' ? anchor.candidates?.[0]?.recordId : undefined);
             const match = recordId ? candidates.find(event => event.toolCallId === recordId) : candidates[position?.callIndex ?? -1];
@@ -69,12 +72,24 @@ export function buildCollaborationTraceTree(interactions: RawInteraction[]): Age
             node.children.forEach(visit);
         };
         if (position) visit(parent);
+        // A malformed or late collaboration link must never turn the display
+        // tree into a cycle. Such a child remains visible at the current
+        // parent level and can still be inspected safely.
+        if (child === parent || containsNode(child, parent)) {
+            if (!parallelRoots.includes(child)) parallelRoots.push(child);
+            continue;
+        }
         parent.children.push(child); child.parentId = parent.id;
         if (matched) matched.spawnedChildId = child.id;
         const labels: Record<string, string> = { confirmed: '明确调用', time_ordered: '按时间推定', candidate: '候选步骤' };
         Object.assign(child, { collaborationLabel: `上报关联 · ${matched ? labels[anchor?.status ?? ''] ?? '未定位' : '未定位到步骤'}`, collaborationReason: anchor?.message });
     }
-    const depth = (node: AgentNode, level: number) => { node.depth = level; node.children.forEach(child => depth(child, level + 1)); };
+    const depth = (node: AgentNode, level: number, visited = new Set<string>()) => {
+        if (visited.has(node.id)) return;
+        visited.add(node.id);
+        node.depth = level;
+        node.children.forEach(child => depth(child, level + 1, visited));
+    };
     const orders = new Map([...groups.values()].flatMap(group => group.tree ? [[group.tree.id, Date.parse(group.source.order ?? '') || 0] as const] : []));
     parallelRoots.splice(1, parallelRoots.length - 1, ...parallelRoots.slice(1).sort((a, b) => (orders.get(a.id) ?? 0) - (orders.get(b.id) ?? 0)));
     const displayRoot: AgentNode = parallelRoots.length === 1 ? root : {
@@ -92,4 +107,11 @@ export function buildCollaborationTraceTree(interactions: RawInteraction[]): Age
     }
     depth(displayRoot, 0);
     return displayRoot;
+}
+
+function containsNode(root: AgentNode, target: AgentNode, visited = new Set<string>()): boolean {
+    if (root.id === target.id) return true;
+    if (visited.has(root.id)) return false;
+    visited.add(root.id);
+    return root.children.some(child => containsNode(child, target, visited));
 }

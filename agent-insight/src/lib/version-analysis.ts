@@ -229,13 +229,19 @@ function buildExecutionWhere(user: string, filters: VersionAnalysisFilters): Rec
 async function loadSessionEndTimes(user: string, taskIds: string[]): Promise<Map<string, string>> {
   const uniqueTaskIds = Array.from(new Set(taskIds.filter(Boolean)));
   if (!uniqueTaskIds.length) return new Map();
-  const rows = await (prismaRaw as any).session.findMany({
-    where: {
-      taskId: { in: uniqueTaskIds },
-      OR: [{ user }, { user: null }],
-    },
-    select: { taskId: true, endTime: true },
-  });
+  const rows: Array<{ taskId: string | null; endTime: Date | string | null }> = [];
+  // Keep the IN list below SQLite's bind-variable limit for large tagged
+  // cohorts. The version page can otherwise fail while opening a detail view.
+  const batchSize = 400;
+  for (let offset = 0; offset < uniqueTaskIds.length; offset += batchSize) {
+    rows.push(...await (prismaRaw as any).session.findMany({
+      where: {
+        taskId: { in: uniqueTaskIds.slice(offset, offset + batchSize) },
+        OR: [{ user }, { user: null }],
+      },
+      select: { taskId: true, endTime: true },
+    }));
+  }
   const out = new Map<string, string>();
   for (const row of rows) {
     const iso = toIso(row.endTime);
@@ -325,6 +331,8 @@ function summarizeTraceMetrics(traces: VersionAnalysisTrace[]): VersionMetricSum
   const costs = traces.map(t => t.cost).filter((v): v is number => typeof v === 'number');
   const terminal = traces.filter(t => t.traceStatus === 'success');
   const times = traces.map(t => new Date(t.timestamp).getTime()).filter(Number.isFinite);
+  const firstSeenMs = times.reduce((min, value) => Math.min(min, value), Number.POSITIVE_INFINITY);
+  const lastSeenMs = times.reduce((max, value) => Math.max(max, value), Number.NEGATIVE_INFINITY);
   return {
     traceCount: traces.length,
     taskCompletionScoreAvg: average(scores),
@@ -333,8 +341,8 @@ function summarizeTraceMetrics(traces: VersionAnalysisTrace[]): VersionMetricSum
     avgTokens: average(tokens),
     p95LatencySec: percentile(latencies, 95),
     avgCost: average(costs),
-    firstSeen: times.length ? new Date(Math.min(...times)).toISOString() : null,
-    lastSeen: times.length ? new Date(Math.max(...times)).toISOString() : null,
+    firstSeen: times.length ? new Date(firstSeenMs).toISOString() : null,
+    lastSeen: times.length ? new Date(lastSeenMs).toISOString() : null,
   };
 }
 
@@ -418,8 +426,8 @@ async function loadVersionRows(user: string, filters: VersionAnalysisFilters): P
       tagId: { in: tags.map((tag: any) => tag.id) },
       execution: buildExecutionWhere(clean, filters),
     },
-    include: {
-      tag: true,
+    select: {
+      tagId: true,
       execution: {
         select: {
           id: true,
@@ -488,33 +496,42 @@ export async function getVersionTagTraces(tagIdInput: string, filters: VersionAn
   if (!tag) throw new TraceTagError(404, 'version tag not found');
   const limitRaw = Number.parseInt(String(filters.limit || ''), 10);
   const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 500) : 100;
-  const rows = await (prismaRaw as any).executionTag.findMany({
-    where: {
-      user,
-      tagId,
-      execution: buildExecutionWhere(user, filters),
-    },
-    include: {
-      execution: {
-        select: {
-          id: true,
-          taskId: true,
-          query: true,
-          framework: true,
-          agentName: true,
-          timestamp: true,
-          tokens: true,
-          inputTokens: true,
-          outputTokens: true,
-          latency: true,
-          cost: true,
-          finalResult: true,
+  const selectedQuestionKey = cleanOptional(filters.questionKey);
+  const where = {
+    user,
+    tagId,
+    execution: buildExecutionWhere(user, filters),
+  };
+  // The detail view only renders `limit` rows. Apply that limit in SQLite so
+  // opening a high-volume version does not materialize every bound Trace.
+  // A normalized question filter cannot be expressed exactly in the query, so
+  // retain the full scan only for that uncommon API use case.
+  const [rows, totalCount] = await Promise.all([
+    (prismaRaw as any).executionTag.findMany({
+      where,
+      select: {
+        execution: {
+          select: {
+            id: true,
+            taskId: true,
+            query: true,
+            framework: true,
+            agentName: true,
+            timestamp: true,
+            tokens: true,
+            inputTokens: true,
+            outputTokens: true,
+            latency: true,
+            cost: true,
+            finalResult: true,
+          },
         },
       },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-  const selectedQuestionKey = cleanOptional(filters.questionKey);
+      orderBy: { createdAt: 'desc' },
+      ...(selectedQuestionKey ? {} : { take: limit }),
+    }),
+    selectedQuestionKey ? Promise.resolve(null) : (prismaRaw as any).executionTag.count({ where }),
+  ]);
   const filteredRows = selectedQuestionKey
     ? rows.filter((row: any) => normalizeVersionQuestionKey(row.execution?.query) === selectedQuestionKey)
     : rows;
@@ -524,8 +541,8 @@ export async function getVersionTagTraces(tagIdInput: string, filters: VersionAn
     .map((row: any) => toTrace(row, sessionEndByTaskId, taskCompletionScores))
     .sort((a: VersionAnalysisTrace, b: VersionAnalysisTrace) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   return {
-    tag: toTagDto(tag, traces.length),
+    tag: toTagDto(tag, selectedQuestionKey ? traces.length : totalCount ?? traces.length),
     traces: traces.slice(0, limit),
-    total: traces.length,
+    total: selectedQuestionKey ? traces.length : totalCount ?? traces.length,
   };
 }

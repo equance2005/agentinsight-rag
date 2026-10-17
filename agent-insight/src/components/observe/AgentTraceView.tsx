@@ -56,6 +56,11 @@ import {
 } from '@/lib/shared/interaction-utils';
 
 const SLOW_MS = 60_000;
+// Rendering every expanded row of a very large trace can block the browser
+// long enough to look like a dead page. Keep the normal tree unchanged while
+// putting a hard ceiling on the explicit "expand all" action.
+const MAX_DEFAULT_EXPANDED_KEYS = 1_500;
+const MAX_EXPAND_ALL_KEYS = 3_000;
 const EMPTY_RAS_MARKERS: RasTraceMarker[] = [];
 
 function sameStringSet(left: Set<string>, right: Set<string>): boolean {
@@ -198,7 +203,23 @@ interface AgentEventTreeEntry {
     children: AgentEventTreeEntry[];
 }
 
+type AggregatedSubtreeStats = {
+    interactions: number;
+    llmCalls: number;
+    toolCalls: number;
+    skillCalls: number;
+    taskCalls: number;
+    inputTokens: number;
+    outputTokens: number;
+    cacheReadTokens: number;
+    cacheWriteTokens: number;
+    reasoningTokens: number;
+    totalTokens: number;
+};
+
 function buildAgentEventTree(events: AgentEvent[]): AgentEventTreeEntry[] {
+    const cached = eventTreeCache.get(events);
+    if (cached) return cached;
     const entries = events.map((event, eventIndex) => ({ event, eventIndex, children: [] as AgentEventTreeEntry[] }));
     const bySpanId = new Map(entries
         .filter(entry => entry.event.sourceSpanId)
@@ -211,8 +232,15 @@ function buildAgentEventTree(events: AgentEvent[]): AgentEventTreeEntry[] {
         if (parent && parent !== entry) parent.children.push(entry);
         else roots.push(entry);
     }
+    eventTreeCache.set(events, roots);
     return roots;
 }
+
+// Agent trees are immutable snapshots while a trace is rendered. Cache the
+// derived structures so expanding a large trace does not rebuild every event
+// tree and every subtree aggregate on each recursive render.
+const eventTreeCache = new WeakMap<AgentEvent[], AgentEventTreeEntry[]>();
+const subtreeStatsCache = new WeakMap<AgentNode, AggregatedSubtreeStats>();
 
 // 复制统一走共享 util(modern clipboard + execCommand fallback,兼容 http 部署)
 import { copyText } from '@/lib/copy-text';
@@ -227,11 +255,17 @@ function buildNodeMap(root: AgentNode): Map<string, AgentNode> {
 // Build default expanded keys: all agents + task events at depth ≤ 1
 function buildDefaultExpandedKeys(root: AgentNode): Set<string> {
     const keys = new Set<string>();
+    const visited = new Set<string>();
     const visit = (node: AgentNode, depth: number) => {
+        if (keys.size >= MAX_DEFAULT_EXPANDED_KEYS) return;
+        if (visited.has(node.id)) return;
+        visited.add(node.id);
         keys.add(agentKey(node.id));
         const visitEvent = (entry: AgentEventTreeEntry) => {
             if (!entry.event.treeHidden && (entry.children.length > 0 || entry.event.spawnedChildId)) {
-                if (entry.event.kind === 'chain' || depth <= 1) keys.add(eventKey(node.id, entry.eventIndex));
+                if ((entry.event.kind === 'chain' || depth <= 1) && keys.size < MAX_DEFAULT_EXPANDED_KEYS) {
+                    keys.add(eventKey(node.id, entry.eventIndex));
+                }
             }
             entry.children.forEach(visitEvent);
         };
@@ -242,7 +276,9 @@ function buildDefaultExpandedKeys(root: AgentNode): Set<string> {
     return keys;
 }
 
-function aggregateSubtreeStats(node: AgentNode) {
+function aggregateSubtreeStats(node: AgentNode, path = new Set<string>()): AggregatedSubtreeStats {
+    const cached = subtreeStatsCache.get(node);
+    if (cached) return cached;
     const stats = {
         interactions: node.stats.interactions,
         llmCalls: node.stats.llmCalls,
@@ -256,8 +292,10 @@ function aggregateSubtreeStats(node: AgentNode) {
         reasoningTokens: node.stats.reasoningTokens,
         totalTokens: node.stats.totalTokens,
     };
+    if (path.has(node.id)) return stats;
+    path.add(node.id);
     for (const child of node.children) {
-        const c = aggregateSubtreeStats(child);
+        const c = aggregateSubtreeStats(child, path);
         stats.interactions += c.interactions;
         stats.llmCalls += c.llmCalls;
         stats.toolCalls += c.toolCalls;
@@ -270,6 +308,8 @@ function aggregateSubtreeStats(node: AgentNode) {
         stats.reasoningTokens += c.reasoningTokens;
         stats.totalTokens += c.totalTokens;
     }
+    path.delete(node.id);
+    subtreeStatsCache.set(node, stats);
     return stats;
 }
 
@@ -282,7 +322,10 @@ function normalizeSkillVersion(version: unknown): number | null {
 function collectSubtreeInteractionIndices(node: AgentNode | null | undefined): Set<number> | null {
     if (!node) return null;
     const indices = new Set<number>();
+    const visited = new Set<string>();
     const visit = (n: AgentNode) => {
+        if (visited.has(n.id)) return;
+        visited.add(n.id);
         n.interactionIndices.forEach(i => indices.add(i));
         n.children.forEach(visit);
     };
@@ -726,7 +769,21 @@ export default function AgentTraceView({
     const isAllExpanded = allExpandableKeys.size > 0
         && [...allExpandableKeys].every(k => expandedKeys.has(k));
 
-    const expandAll = () => setExpandedKeys(new Set(allExpandableKeys));
+    const expandAll = () => {
+        if (allExpandableKeys.size <= MAX_EXPAND_ALL_KEYS) {
+            setExpandedKeys(new Set(allExpandableKeys));
+            return;
+        }
+        const next = new Set<string>();
+        for (const key of allExpandableKeys) {
+            next.add(key);
+            if (next.size >= MAX_EXPAND_ALL_KEYS) break;
+        }
+        setExpandedKeys(next);
+        toast.info(locale.toLowerCase().startsWith('zh')
+            ? `Trace 过大，已展开前 ${MAX_EXPAND_ALL_KEYS.toLocaleString()} 个节点`
+            : `Trace is large; expanded the first ${MAX_EXPAND_ALL_KEYS.toLocaleString()} nodes`);
+    };
 
     const collapseAll = () => {
         if (!tree) return;
@@ -752,7 +809,10 @@ export default function AgentTraceView({
         const spans: SpanInfo[] = [];
         const rasList: RasSpanInfo[] = [];
         const markerById = new Map(rasMarkers.map(m => [m.id, m]));
+        const visitedNodes = new Set<string>();
         const visit = (node: AgentNode, parentKeys: string[]) => {
+            if (visitedNodes.has(node.id)) return;
+            visitedNodes.add(node.id);
             const aKey = agentKey(node.id);
             spans.push({
                 key: aKey, label: getAgentNodeDisplayLabel(node.agentName, node.subagentType), kind: 'agent',
@@ -1269,7 +1329,7 @@ function TreeConnector({ depth, isLast, prefixBits }: { depth: number; isLast: b
 // ─── UnifiedSpanTree (recursive) ─────────────────────────────────────────────
 function UnifiedSpanTree({
     node, nodeMap, expandedKeys, onToggleKey, selectedKey, onSelect,
-    totalStart, totalDuration, depth, isLast, prefixBits,
+    totalStart, totalDuration, depth, isLast, prefixBits, ancestorIds,
 }: {
     node: AgentNode;
     nodeMap: Map<string, AgentNode>;
@@ -1282,7 +1342,11 @@ function UnifiedSpanTree({
     depth: number;
     isLast: boolean;
     prefixBits: boolean[];
+    ancestorIds?: ReadonlySet<string>;
 }) {
+    if (ancestorIds?.has(node.id)) return null;
+    const nextAncestorIds = new Set(ancestorIds);
+    nextAncestorIds.add(node.id);
     const aKey = agentKey(node.id);
     const isExpanded = expandedKeys.has(aKey);
     const isSelected = selectedKey === aKey;
@@ -1333,6 +1397,7 @@ function UnifiedSpanTree({
                     depth={eventDepth}
                     isLast={eventIsLast}
                     prefixBits={eventPrefixBits}
+                    ancestorIds={nextAncestorIds}
                 />
             );
         }
@@ -1388,6 +1453,7 @@ function UnifiedSpanTree({
                         depth={eventDepth + 1}
                         isLast
                         prefixBits={descendantPrefixBits}
+                        ancestorIds={nextAncestorIds}
                     />
                 )}
             </div>
@@ -1520,6 +1586,7 @@ function UnifiedSpanTree({
                         totalStart={totalStart} totalDuration={totalDuration} depth={depth + 1}
                         isLast={index === unanchoredChildren.length - 1}
                         prefixBits={depth === 0 ? [] : [...prefixBits, !isLast]}
+                        ancestorIds={nextAncestorIds}
                     />)}
                 </div>
             )}
