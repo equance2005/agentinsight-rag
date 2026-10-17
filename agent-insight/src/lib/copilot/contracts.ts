@@ -18,7 +18,7 @@ export interface CopilotContextResult {
   facts: Record<string, unknown>;
   missing: string[];
 }
-export type WorkflowAction = 'trace_to_dataset' | 'dataset_create' | 'evaluator_draft' | 'run_filter' | 'dataset_delete' | 'experiment_start' | 'skill_publish';
+export type WorkflowAction = 'trace_to_dataset' | 'dataset_create' | 'evaluator_draft' | 'run_filter' | 'dataset_delete' | 'experiment_start' | 'skill_edit' | 'skill_publish';
 export type CopilotIntent = 'knowledge' | 'context_analysis' | 'how_to' | 'workflow_draft' | 'clarify';
 export interface CopilotRoute { intent: CopilotIntent; action?: WorkflowAction; reason: string }
 export type CopilotPlanStepKind = 'read' | 'write' | 'analyze';
@@ -80,6 +80,9 @@ export function classifyIntent(message: string, hasContext: boolean): CopilotRou
   if (deleteDataset) return { intent: 'workflow_draft', action: 'dataset_delete', reason: '删除数据集属于破坏性操作，必须预览并确认' };
   if (startExperiment) return { intent: 'workflow_draft', action: 'experiment_start', reason: '启动实验前展示冻结配置并等待确认' };
   if (publishSkill) return { intent: 'workflow_draft', action: 'skill_publish', reason: '发布 Skill 前必须通过质量门禁并等待确认' };
+  if (/(?:修改|优化|调整|编辑|生成|创建|update|edit|improve|change).*(?:skill|技能)/i.test(text)) {
+    return { intent: 'workflow_draft', action: 'skill_edit', reason: 'Skill 修改先读取当前版本并生成可审阅的修改建议' };
+  }
   if (lifecycle) return { intent: 'workflow_draft', reason: '创建跨模块 TodoList，按依赖逐步执行并在写操作前确认' };
   if ((traceQuery && !contextualObject) || filter) return { intent: 'workflow_draft', action: 'run_filter', reason: '使用 Trace 查询工具执行可回查的只读运行筛选' };
   if (command && sample && evaluator) return { intent: 'clarify', reason: '请先选择创建样例或起草评估器中的一个操作' };

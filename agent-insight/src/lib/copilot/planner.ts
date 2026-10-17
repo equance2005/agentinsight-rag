@@ -77,6 +77,12 @@ export function buildCopilotPlan(message: string, route: CopilotRoute, context: 
       { title: '确认后发布 Skill 新版本', tool: 'publish_skill', kind: 'write', dependsOn: ['3'], requiresConfirmation: true },
     ]);
   }
+  if (route.action === 'skill_edit') {
+    return plan('提出当前 Skill 的可审阅修改建议', [
+      { title: '读取当前 Skill 版本和工作上下文', tool: 'get_skill_context', kind: 'read' },
+      { title: '生成修改候选和影响说明', tool: 'propose_skill_change', kind: 'analyze', dependsOn: ['1'] },
+    ]);
+  }
   if (route.intent === 'workflow_draft' && /全流程|闭环|回归实验|端到端|end.?to.?end|regression/i.test(message)) {
     return plan('完成 Trace 到回归实验的跨模块闭环', [
       { title: '读取当前 Trace 和失败证据', tool: 'get_trace_context', kind: 'read' },

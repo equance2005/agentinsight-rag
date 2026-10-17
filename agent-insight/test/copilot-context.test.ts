@@ -35,3 +35,9 @@ test('copilot routes blank dataset creation to the Dataset workflow', () => {
   assert.equal(route.intent, 'workflow_draft');
   assert.equal(route.action, 'dataset_create');
 });
+
+test('copilot routes Skill modification requests to the Skill workflow', () => {
+  const route = classifyIntent('修改当前 Skill 的提示词', true);
+  assert.equal(route.intent, 'workflow_draft');
+  assert.equal(route.action, 'skill_edit');
+});
