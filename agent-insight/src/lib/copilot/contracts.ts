@@ -64,7 +64,7 @@ export interface WorkflowPreview {
 
 export function extractDatasetName(message: string): string | undefined {
   const explicit = message.match(/(?:名称\s*(?:叫|为|是)?|命名为|名为|叫)\s*[「“"'`]?\s*([^」”"'`\s，。！？!?]+)/i);
-  if (explicit?.[1]?.trim()) return explicit[1].trim();
+  if (explicit?.[1]?.trim()) return explicit[1].trim().replace(/的(?:评测)?数据集.*$/i, '').trim();
   const deletion = message.match(/(?:删除|delete)\s*[「“"'`]?\s*(.+?)\s*[」”"'`]?\s*(?:这个|该|the)?\s*(?:数据集|评测集|dataset)(?:[。.!！?？]|$)/i);
   const name = deletion?.[1]?.trim();
   if (!name || /^(?:这个|该|the)$/i.test(name)) return undefined;
@@ -73,7 +73,7 @@ export function extractDatasetName(message: string): string | undefined {
 
 export function extractEvaluatorName(message: string): string | undefined {
   const explicit = message.match(/(?:名称\s*(?:叫|为|是)?|命名为|名为|叫)\s*[「“"'`]?\s*([^」”"'`\s，。！？!?]+)/i);
-  if (explicit?.[1]?.trim()) return explicit[1].trim();
+  if (explicit?.[1]?.trim()) return explicit[1].trim().replace(/的(?:自定义)?评(?:估|测)器.*$/i, '').trim();
   const deletion = message.match(/(?:删除|delete)\s*[「“"'`]?\s*(.+?)\s*[」”"'`]?\s*(?:这个|该|the)?\s*(?:评估器|评测器|evaluator)(?:[。.!！?？]|$)/i);
   const name = deletion?.[1]?.trim();
   if (!name || /^(?:这个|该|the)$/i.test(name)) return undefined;

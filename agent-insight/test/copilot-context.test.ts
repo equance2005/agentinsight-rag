@@ -45,6 +45,7 @@ test('copilot routes 新建 dataset requests to the Dataset workflow', () => {
 test('copilot extracts a requested dataset name for the creation tool', () => {
   assert.equal(extractDatasetName('名称叫test，先建空集'), 'test');
   assert.equal(extractDatasetName('命名为「安全日志集」'), '安全日志集');
+  assert.equal(extractDatasetName('名字叫test的评测数据集'), 'test');
   assert.equal(extractDatasetName('删除messages 日志分析（内置示例）这个数据集'), 'messages 日志分析（内置示例）');
 });
 
