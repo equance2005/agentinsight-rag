@@ -36,6 +36,12 @@ test('copilot routes blank dataset creation to the Dataset workflow', () => {
   assert.equal(route.action, 'dataset_create');
 });
 
+test('copilot routes 新建 dataset requests to the Dataset workflow', () => {
+  const route = classifyIntent('新建一个名字叫test的评测数据集', false);
+  assert.equal(route.intent, 'workflow_draft');
+  assert.equal(route.action, 'dataset_create');
+});
+
 test('copilot extracts a requested dataset name for the creation tool', () => {
   assert.equal(extractDatasetName('名称叫test，先建空集'), 'test');
   assert.equal(extractDatasetName('命名为「安全日志集」'), '安全日志集');

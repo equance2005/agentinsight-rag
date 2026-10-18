@@ -93,7 +93,7 @@ export function classifyIntent(message: string, hasContext: boolean): CopilotRou
   const traceQuery = /(?:查询|查找|列出|找出|查看|搜索|筛选|最近|失败|成功).*(?:trace|链路|运行|执行)|(?:trace|链路|运行|执行).*(?:查询|查找|列出|找出|查看|搜索|筛选|最近|失败|成功)|(?:filter|find|list|search|show).*(?:run|trace|execution)/i.test(text);
   const filter = /筛选|查找.*(?:运行|trace)|找出.*(?:运行|trace)|filter.*(?:run|trace)|find.*(?:run|trace)/i.test(text);
   const contextualObject = hasContext && /当前|这条|这个|本次|this|current/i.test(text);
-  const command = /创建|生成|起草|调整|修改|准备|帮.*(?:做|写)|create|draft|generate|update/i.test(text);
+  const command = /创建|新建|生成|起草|调整|修改|准备|帮.*(?:做|写)|create|draft|generate|update/i.test(text);
   const negated = /不要.*(?:创建|生成|修改)|不.*执行|do not|don't/i.test(text);
   if (howTo) return { intent: 'how_to', reason: '方法咨询，只解释操作步骤' };
   if (negated) return { intent: hasContext ? 'context_analysis' : 'knowledge', reason: '用户没有授权工作流操作' };
