@@ -149,6 +149,7 @@ export default function CopilotDrawer() {
   const [plan, setPlan] = useState<CopilotPlan | null>(null);
   const [showTraceSteps, setShowTraceSteps] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
+  const [datasetKindChoice, setDatasetKindChoice] = useState<'ideal_output' | 'trajectory' | 'reliability'>('ideal_output');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [attachments, setAttachments] = useState<ImageAttachment[]>([]);
@@ -275,6 +276,14 @@ export default function CopilotDrawer() {
       if (secondFrame) window.cancelAnimationFrame(secondFrame);
     };
   }, [open]);
+
+  useEffect(() => {
+    if (preview?.action !== 'dataset_create') return;
+    const dataset = preview.changes.dataset as { datasetKind?: string } | undefined;
+    if (dataset?.datasetKind === 'trajectory' || dataset?.datasetKind === 'reliability' || dataset?.datasetKind === 'ideal_output') {
+      setDatasetKindChoice(dataset.datasetKind);
+    }
+  }, [preview]);
 
   function rememberScrollPosition() {
     const value = scrollRef.current?.scrollTop;
@@ -432,7 +441,7 @@ export default function CopilotDrawer() {
       const response = await fetch('/api/copilot/workflows/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(apiKey ? { 'x-witty-api-key': apiKey } : {}) },
-        body: JSON.stringify({ action: preview.action, confirmationToken: preview.confirmationToken, input: {}, user }),
+        body: JSON.stringify({ action: preview.action, confirmationToken: preview.confirmationToken, input: preview.action === 'dataset_create' ? { datasetKind: datasetKindChoice } : {}, user }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(String(payload.error || '确认执行失败'));
@@ -510,7 +519,18 @@ export default function CopilotDrawer() {
                 {showTraceSteps && traceSteps.map(source => <div key={source.id} style={styles.traceStep}><a href={source.href || '#'} style={styles.source} title="打开当前 Trace"><FileText size={14} /><span>{source.label}</span><span style={styles.sourceLocator}>{source.locator}</span></a>{source.excerpt && <div style={styles.traceStepExcerpt}>{formatSourceExcerpt(source.excerpt)}</div>}</div>)}
               </section>;
             })()}
-            {preview && <section style={styles.preview}><div style={styles.sectionLabel}>{preview.action === 'run_filter' ? 'Trace 查询结果' : `工作流草稿 · ${preview.target}`}</div><pre style={styles.previewJson}>{JSON.stringify(preview.changes, null, 2)}</pre>{preview.missing.length > 0 && <div style={styles.missing}>还缺少：{preview.missing.join('、')}</div>}<div style={styles.previewActions}><button type="button" onClick={() => setPreview(null)} style={styles.secondaryButton}>{preview.action === 'run_filter' ? '关闭' : '取消'}</button>{preview.action !== 'run_filter' && <button type="button" disabled={busy} onClick={confirmPreview} style={styles.primaryButton}>{preview.action === 'dataset_delete' || preview.action === 'evaluator_delete' ? '确认删除' : preview.action === 'experiment_start' ? '确认启动' : preview.action === 'skill_publish' ? '确认发布' : '确认写入'}</button>}</div></section>}
+            {preview && (
+              <section style={styles.preview}>
+                <div style={styles.sectionLabel}>{preview.action === 'run_filter' ? 'Trace 查询结果' : `工作流草稿 · ${preview.target}`}</div>
+                {preview.action === 'dataset_create' && <DatasetKindPicker value={datasetKindChoice} onChange={setDatasetKindChoice} />}
+                <pre style={styles.previewJson}>{JSON.stringify(preview.changes, null, 2)}</pre>
+                {preview.missing.length > 0 && <div style={styles.missing}>还缺少：{preview.missing.join('、')}</div>}
+                <div style={styles.previewActions}>
+                  <button type="button" onClick={() => setPreview(null)} style={styles.secondaryButton}>{preview.action === 'run_filter' ? '关闭' : '取消'}</button>
+                  {preview.action !== 'run_filter' && <button type="button" disabled={busy} onClick={confirmPreview} style={styles.primaryButton}>{preview.action === 'dataset_delete' || preview.action === 'evaluator_delete' ? '确认删除' : preview.action === 'experiment_start' ? '确认启动' : preview.action === 'skill_publish' ? '确认发布' : '确认写入'}</button>}
+                </div>
+              </section>
+            )}
           </div>
 
           <footer style={styles.footer}>
@@ -546,6 +566,54 @@ export default function CopilotDrawer() {
       <style jsx global>{`.copilot-robo-icon { border-radius: 50%; background: var(--primary); color: var(--primary-foreground); box-shadow: 0 2px 6px var(--shadow-color-sm); } button:hover > .copilot-robo-icon { transform: translateY(-1px); box-shadow: 0 3px 9px var(--shadow-color-md); }`}</style>
       <style jsx global>{`@keyframes copilot-slide-in { from { transform: translateX(100%); opacity: .7; } to { transform: translateX(0); opacity: 1; } } @keyframes copilot-fade-out { from { transform: translateX(0); opacity: 1; } to { transform: translateX(18px); opacity: 0; } } .copilot-scroll { scrollbar-width: thin; scrollbar-color: #485174 transparent; } .copilot-scroll::-webkit-scrollbar { width: 7px; } .copilot-scroll::-webkit-scrollbar-track { background: transparent; } .copilot-scroll::-webkit-scrollbar-thumb { background: #485174; border-radius: 8px; } .copilot-scroll::-webkit-scrollbar-thumb:hover { background: #6876bd; } .copilot-spin { animation: copilot-spin .9s linear infinite; } @keyframes copilot-spin { to { transform: rotate(360deg); } } .copilot-composer:focus-within { border-color: var(--primary) !important; box-shadow: 0 0 0 3px var(--primary-subtle), 0 8px 24px var(--shadow-color-sm); } .copilot-robo-icon { display: inline-grid; place-items: center; width: 20px; height: 20px; flex: 0 0 20px; border-radius: 50%; background: var(--primary); color: var(--primary-foreground); box-shadow: 0 2px 6px var(--shadow-color-sm); transition: transform .15s ease, box-shadow .15s ease; } button:hover > .copilot-robo-icon { transform: translateY(-1px); box-shadow: 0 3px 9px var(--shadow-color-md); } .copilot-workflow-button:hover { background: var(--primary-subtle) !important; border-color: var(--primary-subtle-border) !important; color: var(--primary) !important; } .copilot-model-option:hover { background: var(--primary-subtle) !important; color: var(--primary) !important; } .copilot-markdown { font-size: inherit; line-height: inherit; overflow-wrap: anywhere; } .copilot-markdown > :first-child { margin-top: 0; } .copilot-markdown > :last-child { margin-bottom: 0; } .copilot-markdown p { margin: 7px 0; } .copilot-markdown strong { font-weight: 700; color: var(--foreground); } .copilot-markdown em { font-style: italic; } .copilot-markdown h1, .copilot-markdown h2, .copilot-markdown h3 { margin: 10px 0 6px; font-size: 14px; font-weight: 700; color: var(--foreground); } .copilot-markdown ul, .copilot-markdown ol { margin: 7px 0 7px 19px; padding: 0; } .copilot-markdown li { margin: 3px 0; } .copilot-markdown blockquote { margin: 8px 0; padding-left: 10px; border-left: 2px solid var(--primary); color: var(--foreground-secondary); } .copilot-markdown code { padding: 1px 4px; border-radius: 4px; background: var(--background-secondary); font-size: .92em; } .copilot-markdown pre { margin: 8px 0; padding: 9px; overflow-x: auto; border-radius: 6px; background: var(--background-secondary); } .copilot-markdown pre code { padding: 0; background: transparent; } .copilot-markdown a { color: var(--primary); text-decoration: underline; text-underline-offset: 2px; } .copilot-markdown table { width: 100%; margin: 8px 0; border-collapse: collapse; font-size: 12px; } .copilot-markdown th, .copilot-markdown td { border: 1px solid var(--border); padding: 5px 6px; } .copilot-markdown th { background: var(--background-secondary); font-weight: 700; }`}</style>
     </>
+  );
+}
+
+function DatasetKindPicker({
+  value,
+  onChange,
+}: {
+  value: 'ideal_output' | 'trajectory' | 'reliability';
+  onChange: (value: 'ideal_output' | 'trajectory' | 'reliability') => void;
+}) {
+  const options = [
+    ['ideal_output', '理想输出评测集', '输入 + 预期输出'],
+    ['trajectory', '轨迹评测集', 'Agent 运行轨迹'],
+    ['reliability', '可靠性评测集', '故障注入类型'],
+  ] as const;
+  return (
+    <div style={{ display: 'grid', gap: 6, marginBottom: 10 }}>
+      <div style={{ color: 'var(--foreground-secondary)', fontSize: 11, fontWeight: 600 }}>选择数据集类型（可选）</div>
+      <div style={{ display: 'grid', gap: 6 }}>
+        {options.map(([kind, label, description]) => (
+          <button
+            type="button"
+            key={kind}
+            onClick={() => onChange(kind)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 8,
+              width: '100%',
+              border: `1px solid ${value === kind ? 'var(--primary)' : 'var(--border)'}`,
+              borderRadius: 7,
+              background: value === kind ? 'var(--primary-subtle)' : 'transparent',
+              color: 'var(--foreground)',
+              padding: '7px 9px',
+              textAlign: 'left',
+              cursor: 'pointer',
+            }}
+          >
+            <span style={{ display: 'grid', gap: 2 }}>
+              <span style={{ fontSize: 12, fontWeight: 600 }}>{label}</span>
+              <span style={{ color: 'var(--foreground-muted)', fontSize: 10 }}>{description}</span>
+            </span>
+            {value === kind && <Check size={14} style={{ color: 'var(--primary)', flexShrink: 0 }} />}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 

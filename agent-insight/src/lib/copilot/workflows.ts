@@ -74,12 +74,16 @@ export async function buildDatasetCreatePreview(context: CopilotContextResult, i
     (instructions && instructions.includes(dataset.name))
       || (/messages\s*日志分析|日志分析.*内置示例/i.test(instructions) && /messages\s*日志分析/i.test(dataset.name))
   ));
-  const fields = template?.fields?.length
+  const kindOptions = [
+    { kind: 'ideal_output', label: '理想输出评测集', description: '包含输入和理想输出', fields: [{ key: 'input', label: '输入', type: 'text' }, { key: 'reference_output', label: '预期输出', type: 'text' }] },
+    { kind: 'trajectory', label: '轨迹评测集', description: 'Agent 运行轨迹评测', fields: [{ key: 'input', label: '输入', type: 'text' }, { key: 'reference_output', label: '预期输出', type: 'text' }, { key: 'trajectory', label: '轨迹', type: 'json' }] },
+    { kind: 'reliability', label: '可靠性评测集', description: '含故障注入类型字段', fields: [{ key: 'input', label: '输入', type: 'text' }, { key: 'fault_injection_type', label: '故障注入类型', type: 'text' }, { key: 'reference_output', label: '预期输出', type: 'text' }] },
+  ] as const;
+  const selectedKind = input.datasetKind || template?.datasetKind || 'ideal_output';
+  const selectedOption = kindOptions.find(option => option.kind === selectedKind) || kindOptions[0];
+  const fields = template?.fields?.length && !input.datasetKind
     ? template.fields.map(field => ({ ...field }))
-    : [
-        { key: 'input', label: '输入', type: 'text' },
-        { key: 'reference_output', label: '预期输出', type: 'text' },
-      ];
+    : selectedOption.fields.map(field => ({ ...field }));
   const description = template
     ? `参照「${template.name}」的字段结构创建空数据集，暂不复制 Case。`
     : '由 Agent Insight Copilot 创建，可继续录入评测样例。';
@@ -88,7 +92,8 @@ export async function buildDatasetCreatePreview(context: CopilotContextResult, i
     dataset: {
       name,
       description,
-      datasetKind: template?.datasetKind || 'ideal_output',
+      datasetKind: selectedKind,
+      kindOptions,
       fields,
       caseCount: 0,
       template: template ? {
@@ -115,14 +120,16 @@ export async function buildDatasetCreatePreview(context: CopilotContextResult, i
   };
 }
 
-export async function confirmDatasetCreate(user: string, previewToken: string): Promise<{ datasetId: string; inserted: boolean }> {
+export async function confirmDatasetCreate(user: string, previewToken: string, input: WorkflowInput = {}): Promise<{ datasetId: string; inserted: boolean }> {
   const payload = decode(previewToken);
   if (payload.user !== user || payload.action !== 'dataset_create') throw new Error('确认令牌与当前用户或操作不匹配');
-  const dataset = (payload.changes as { dataset?: { name?: string; description?: string; datasetKind?: string; fields?: DatasetField[] } }).dataset;
+  const dataset = (payload.changes as { dataset?: { name?: string; description?: string; datasetKind?: string; fields?: DatasetField[]; kindOptions?: Array<{ kind: string; fields: DatasetField[] }> } }).dataset;
   const name = String(dataset?.name || '').trim();
   if (!name) throw new Error('确认令牌缺少数据集名称');
   const existing = (await readUserAgentDatasets(user)).find(item => item.name === name);
   if (existing) return { datasetId: existing.id, inserted: false };
+  const selectedKind = input.datasetKind || dataset?.datasetKind || 'ideal_output';
+  const selectedOption = dataset?.kindOptions?.find(option => option.kind === selectedKind);
   const now = new Date().toISOString();
   const record: AgentDatasetRecord = {
     id: randomUUID(),
@@ -132,9 +139,9 @@ export async function confirmDatasetCreate(user: string, previewToken: string): 
     targetAgent: '',
     targetSkill: '',
     tags: ['copilot'],
-    fields: Array.isArray(dataset?.fields) ? dataset.fields : [],
+    fields: selectedOption?.fields || (Array.isArray(dataset?.fields) ? dataset.fields : []),
     cases: [],
-    datasetKind: dataset?.datasetKind === 'trajectory' || dataset?.datasetKind === 'reliability' ? dataset.datasetKind : 'ideal_output',
+    datasetKind: selectedKind === 'trajectory' || selectedKind === 'reliability' ? selectedKind : 'ideal_output',
     createdAt: now,
     updatedAt: now,
   };

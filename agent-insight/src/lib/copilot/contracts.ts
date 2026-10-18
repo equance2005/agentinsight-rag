@@ -41,6 +41,7 @@ export interface CopilotPlan {
 export const workflowInputSchema = z.object({
   datasetId: z.string().max(240).optional(),
   datasetName: z.string().max(120).optional(),
+  datasetKind: z.enum(['ideal_output', 'trajectory', 'reliability']).optional(),
   experimentId: z.string().max(240).optional(),
   sessionId: z.string().max(240).optional(),
   recordId: z.string().max(240).optional(),

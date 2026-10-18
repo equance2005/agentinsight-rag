@@ -21,7 +21,7 @@ export async function POST(request: Request) {
       : action === 'evaluator_delete'
         ? await confirmEvaluatorDelete(auth.username, confirmationToken)
       : action === 'dataset_create'
-        ? await confirmDatasetCreate(auth.username, confirmationToken)
+        ? await confirmDatasetCreate(auth.username, confirmationToken, workflowInputSchema.parse(body.input || {}))
       : action === 'dataset_delete'
         ? await confirmDatasetDelete(auth.username, confirmationToken)
         : action === 'experiment_start'
